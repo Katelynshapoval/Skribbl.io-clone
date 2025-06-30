@@ -8,6 +8,7 @@ function DrawingBoard() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [eraserMode, setEraserMode] = useState(false);
   const [lineWidth, setLineWidth] = useState(3); // Default line width
+  const lastErasePoint = useRef(null);
 
   // Selected color
   const [color, setColor] = useState("#000000");
@@ -30,19 +31,32 @@ function DrawingBoard() {
       const ctx = ctxRef.current;
       if (!ctx) return;
 
-      ctx.strokeStyle = strokeColor; // Set color for received strokes
-      ctx.lineWidth = lineWidth; // Set line width for received strokes
-
-      if (type === "start") {
+      if (type === "eraseStart") {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(offsetX, offsetY);
-      } else if (type === "draw") {
+      } else if (type === "eraseDraw") {
         ctx.lineTo(offsetX, offsetY);
         ctx.stroke();
-      } else if (type === "stop") {
+      } else if (type === "eraseStop") {
         ctx.closePath();
-      } else if (type === "erase") {
-        ctx.clearRect(offsetX - 10, offsetY - 10, 20, 20); // Erase a small area
+        ctx.globalCompositeOperation = "source-over";
+      } else {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = lineWidth;
+
+        if (type === "start") {
+          ctx.beginPath();
+          ctx.moveTo(offsetX, offsetY);
+        } else if (type === "draw") {
+          ctx.lineTo(offsetX, offsetY);
+          ctx.stroke();
+        } else if (type === "stop") {
+          ctx.closePath();
+        }
       }
     });
 
@@ -73,11 +87,18 @@ function DrawingBoard() {
     const ctx = ctxRef.current;
 
     if (eraserMode) {
-      emitErase(offsetX, offsetY);
-      setIsDrawing(true); // Start tracking for continuous erasing
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(offsetX, offsetY);
+      lastErasePoint.current = { offsetX, offsetY };
+      setIsDrawing(true);
+      emitDrawing(offsetX, offsetY, "eraseStart");
       return;
     }
 
+    ctx.globalCompositeOperation = "source-over";
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
@@ -89,14 +110,17 @@ function DrawingBoard() {
   const draw = ({ nativeEvent }) => {
     const { offsetX, offsetY } = nativeEvent;
     const ctx = ctxRef.current;
-
     if (!isDrawing) return;
 
     if (eraserMode) {
-      emitErase(offsetX, offsetY);
+      ctx.lineTo(offsetX, offsetY);
+      ctx.stroke();
+      emitDrawing(offsetX, offsetY, "eraseDraw");
+      lastErasePoint.current = { offsetX, offsetY };
       return;
     }
 
+    ctx.globalCompositeOperation = "source-over";
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
     ctx.lineTo(offsetX, offsetY);
@@ -105,14 +129,18 @@ function DrawingBoard() {
   };
 
   const stopDrawing = () => {
-    if (!ctxRef.current) return;
+    const ctx = ctxRef.current;
+    if (!ctx) return;
 
-    if (!eraserMode) {
-      ctxRef.current.closePath();
+    if (eraserMode) {
+      ctx.closePath();
+      emitDrawing(null, null, "eraseStop");
+    } else {
+      ctx.closePath();
       emitDrawing(null, null, "stop");
     }
-
-    setIsDrawing(false); // Always reset this
+    setIsDrawing(false);
+    lastErasePoint.current = null;
   };
 
   return (
@@ -123,7 +151,6 @@ function DrawingBoard() {
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
       />
       <div>
         <input
