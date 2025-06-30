@@ -13,6 +13,11 @@ module.exports = (io) => {
       io.emit("receiveMessage", message);
     });
 
+    socket.on("drawing", (data) => {
+      // broadcast to all other clients except sender
+      socket.broadcast.emit("drawing", data);
+    });
+
     socket.on("disconnect", () => {
       console.log("Client disconnected:", socket.id);
     });

@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import Chat from "../components/Chat";
+import DrawingBoard from "../components/DrawingBoard";
 
 function Room() {
   const location = useLocation();
@@ -9,6 +10,7 @@ function Room() {
     <div>
       <h1>Welcome to the Room, {username}!</h1>
       <Chat username={username} />
+      <DrawingBoard />
     </div>
   );
 }
