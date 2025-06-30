@@ -1,4 +1,5 @@
 module.exports = (io) => {
+  // Listen for new client connections to the Socket.IO server
   io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
 

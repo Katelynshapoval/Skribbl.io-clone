@@ -5,11 +5,12 @@ function Chat({ username }) {
   const [messages, setMessages] = useState([]);
   const [currentMessage, setCurrentMessage] = useState("");
   const socket = useSocket();
-  console.log("Socket in Chat:", socket);
 
   useEffect(() => {
     if (!socket) return;
 
+    // Listener for incoming messages
+    // This function will be called whenever a new message is received
     const messageHandler = (message) => {
       setMessages((prev) => [...prev, message]);
     };
@@ -26,6 +27,8 @@ function Chat({ username }) {
     e.preventDefault();
     if (currentMessage.trim()) {
       const newMessage = { username, text: currentMessage };
+      // Emit the message to the server
+      // This will trigger the server to broadcast the message to all connected clients
       socket.emit("sendMessage", newMessage);
       setCurrentMessage("");
     }
