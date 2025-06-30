@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import Chat from "./Chat";
+import Chat from "../components/Chat";
 
 function Room() {
   const location = useLocation();

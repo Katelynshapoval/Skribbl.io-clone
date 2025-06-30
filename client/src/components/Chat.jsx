@@ -1,28 +1,32 @@
 import React, { useState, useEffect, useRef } from "react";
-import { io } from "socket.io-client";
+import { useSocket } from "../context/SocketContext";
 
 function Chat({ username }) {
   const [messages, setMessages] = useState([]);
   const [currentMessage, setCurrentMessage] = useState("");
-  const socket = useRef(null);
+  const socket = useSocket();
+  console.log("Socket in Chat:", socket);
 
   useEffect(() => {
-    socket.current = io("http://localhost:5000");
+    if (!socket) return;
 
-    socket.current.on("receiveMessage", (message) => {
+    const messageHandler = (message) => {
       setMessages((prev) => [...prev, message]);
-    });
-
-    return () => {
-      socket.current.disconnect();
     };
-  }, []);
+
+    socket.on("receiveMessage", messageHandler);
+
+    // Cleanup function to remove the listener
+    return () => {
+      socket.off("receiveMessage", messageHandler);
+    };
+  }, [socket]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (currentMessage.trim()) {
       const newMessage = { username, text: currentMessage };
-      socket.current.emit("sendMessage", newMessage);
+      socket.emit("sendMessage", newMessage);
       setCurrentMessage("");
     }
   };

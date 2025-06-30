@@ -1,34 +1,39 @@
-import React, { useEffect, useState, useRef } from "react";
-import { io } from "socket.io-client";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSocket } from "../context/SocketContext";
 
 function Home() {
   const [username, setUsername] = useState("");
   const navigate = useNavigate();
-  const socket = useRef(null);
+  const socket = useSocket();
 
   useEffect(() => {
-    socket.current = io("http://localhost:5000");
+    if (!socket) return; // wait until socket is connected
 
-    socket.current.on("connect", () => {
-      console.log("Connected with ID:", socket.current.id);
+    socket.on("connect", () => {
+      console.log("Connected with ID:", socket.id);
     });
 
-    socket.current.on("helloFromServer", (msg) => {
+    socket.on("helloFromServer", (msg) => {
       console.log("Message from server:", msg);
     });
 
     return () => {
-      socket.current.disconnect();
+      socket.off("connect");
+      socket.off("helloFromServer");
     };
-  }, []);
+  }, [socket]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (username.trim()) {
       navigate("/room", { state: { username } });
       console.log("Username submitted:", username);
-      socket.current.emit("joinGame", { username });
+
+      if (socket) {
+        socket.emit("joinGame", { username });
+      }
+
       setUsername("");
     }
   };
