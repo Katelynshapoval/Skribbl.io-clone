@@ -70,18 +70,6 @@ function DrawingBoard() {
     socket.emit("drawing", { offsetX, offsetY, type, color }); // send current color with drawing data
   };
 
-  const emitErase = (offsetX, offsetY) => {
-    const ctx = ctxRef.current;
-    const size = lineWidth; // use current lineWidth for erase size
-    ctx.clearRect(offsetX - size, offsetY - size, size + 6, size + 6); // Clear a square area for erasing
-    socket.emit("drawing", {
-      offsetX,
-      offsetY,
-      type: "erase",
-      lineWidth: size, // send erase size
-    });
-  };
-
   const startDrawing = ({ nativeEvent }) => {
     const { offsetX, offsetY } = nativeEvent;
     const ctx = ctxRef.current;

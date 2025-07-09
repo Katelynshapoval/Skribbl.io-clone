@@ -3,49 +3,58 @@ import { useNavigate } from "react-router-dom";
 import { useSocket } from "../context/SocketContext";
 
 function Home() {
-  const [username, setUsername] = useState(""); // Local state to store username input
-  const navigate = useNavigate(); // React Router hook to programmatically navigate
-  const socket = useSocket(); // Access shared socket instance from context
+  const [username, setUsername] = useState("");
+  const [roomCode, setRoomCode] = useState("");
+  const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
+  const socket = useSocket();
 
   useEffect(() => {
-    if (!socket) return; // Wait for socket connection to be established
+    if (!socket) return;
 
-    // Log socket connection ID when connected
-    socket.on("connect", () => {
-      console.log("Connected with ID:", socket.id);
-    });
-
-    // Listen for a custom server event for debugging or welcome message
-    socket.on("helloFromServer", (msg) => {
-      console.log("Message from server:", msg);
-    });
-
-    // Cleanup listeners on component unmount or socket change
-    return () => {
-      socket.off("connect");
-      socket.off("helloFromServer");
+    const handleRoomJoined = ({ roomCode, users }) => {
+      navigate(`/room/${roomCode}`, {
+        state: { username, users, roomCode },
+      });
     };
-  }, [socket]);
 
-  const handleSubmit = (e) => {
+    const handleError = (message) => {
+      setError(message);
+      setTimeout(() => setError(null), 5000);
+    };
+
+    socket.on("roomJoined", handleRoomJoined);
+    socket.on("error", handleError);
+
+    return () => {
+      socket.off("roomJoined", handleRoomJoined);
+      socket.off("error", handleError);
+    };
+  }, [socket, navigate, username]);
+
+  const handleJoinRoom = (e) => {
     e.preventDefault();
-    if (username.trim()) {
-      // Navigate to the game room route, passing username via state
-      navigate("/room", { state: { username } });
-      console.log("Username submitted:", username);
+    if (roomCode.trim() && socket) {
+      socket.emit("joinRoom", { roomCode, username });
+      setRoomCode("");
+    }
+  };
 
-      // Notify server that this user is joining the game
-      if (socket) {
-        socket.emit("joinGame", { username });
-      }
+  const handleCreateRoom = (e) => {
+    e.preventDefault();
+    if (username.trim() && socket) {
+      socket.emit("createRoom", { username });
 
-      // Clear input field after submission
-      setUsername("");
+      socket.once("roomCreated", ({ roomCode, users }) => {
+        navigate(`/room/${roomCode}`, { state: { username, users, roomCode } });
+      });
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div>
+      {error && <div className="errorMessage">{error}</div>}
       <label htmlFor="username">Username:</label>
       <input
         type="text"
@@ -55,8 +64,29 @@ function Home() {
         onChange={(e) => setUsername(e.target.value)}
         required
       />
-      <button type="submit">Join Game</button>
-    </form>
+
+      <h2>Join a Room</h2>
+      <form onSubmit={handleJoinRoom}>
+        <label htmlFor="roomCode">Room Code:</label>
+        <input
+          type="text"
+          id="roomCode"
+          name="roomCode"
+          placeholder="Enter room code"
+          value={roomCode}
+          onChange={(e) => setRoomCode(e.target.value)}
+          required
+        />
+        <button type="submit">Join Game</button>
+      </form>
+
+      <p>Or</p>
+
+      <h2>Create a Room</h2>
+      <form onSubmit={handleCreateRoom}>
+        <button type="submit">Create Room</button>
+      </form>
+    </div>
   );
 }
 

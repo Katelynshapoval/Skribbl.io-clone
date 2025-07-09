@@ -1,25 +1,24 @@
+const {
+  handleJoinRoom,
+  handleCreateRoom,
+  handleLeaveRoom,
+} = require("../handlers/rooms");
+
 module.exports = (io) => {
-  // Listen for new client connections to the Socket.IO server
   io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
 
-    socket.on("joinGame", ({ username }) => {
-      console.log(`User joined game with username: ${username}`);
-      socket.username = username;
-      socket.emit("welcome", `Welcome to the game, ${username}!`);
-    });
+    // Handle joining, creating, and leaving rooms
+    handleJoinRoom(socket);
+    handleCreateRoom(socket);
+    handleLeaveRoom(socket);
 
     socket.on("sendMessage", (message) => {
       io.emit("receiveMessage", message);
     });
 
     socket.on("drawing", (data) => {
-      // broadcast to all other clients except sender
       socket.broadcast.emit("drawing", data);
-    });
-
-    socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
     });
   });
 };
