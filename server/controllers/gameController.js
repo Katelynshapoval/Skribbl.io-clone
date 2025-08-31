@@ -2,6 +2,7 @@ const {
   handleJoinRoom,
   handleCreateRoom,
   handleLeaveRoom,
+  handleReadyStatus,
 } = require("../handlers/rooms");
 
 module.exports = (io) => {
@@ -12,6 +13,7 @@ module.exports = (io) => {
     handleJoinRoom(socket);
     handleCreateRoom(socket);
     handleLeaveRoom(socket);
+    handleReadyStatus(socket, io);
 
     socket.on("sendMessage", (message) => {
       io.emit("receiveMessage", message);

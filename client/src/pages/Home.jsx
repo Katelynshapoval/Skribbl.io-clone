@@ -61,6 +61,7 @@ function Home() {
         id="username"
         name="username"
         value={username}
+        autoComplete="off"
         onChange={(e) => setUsername(e.target.value)}
         required
       />
@@ -73,6 +74,7 @@ function Home() {
           id="roomCode"
           name="roomCode"
           placeholder="Enter room code"
+          autoComplete="off"
           value={roomCode}
           onChange={(e) => setRoomCode(e.target.value)}
           required

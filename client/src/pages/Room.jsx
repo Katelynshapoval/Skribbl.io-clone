@@ -3,40 +3,63 @@ import { useLocation, useParams } from "react-router-dom";
 import Chat from "../components/Chat";
 import DrawingBoard from "../components/DrawingBoard";
 import { useSocket } from "../context/SocketContext";
+import { useNavigate } from "react-router-dom";
 
 function Room() {
+  // Hooks
   const location = useLocation();
+  const socket = useSocket();
+  const navigate = useNavigate();
+
+  // User information
   const username = location.state?.username || "Guest";
   const { roomCode } = useParams(); // from URL /room/:roomCode
   const [users, setUsers] = useState(location.state?.users || []);
   const [message, setMessage] = useState("");
 
-  const socket = useSocket();
-
-  // Log the room code and username when the component mounts
+  // Socket event listeners
   useEffect(() => {
     if (!socket) return;
+    // User joined message
     socket.on("userJoinedMessage", ({ message, users }) => {
-      console.log("User joined message:", message);
+      setUsers(users);
+      setMessage(message);
+      console.log(users);
+      setTimeout(() => {
+        setMessage("");
+      }, 5000); // hide message after 5 seconds
+    });
+
+    // User left message
+    socket.on("userLeftMessage", ({ message, users }) => {
       setUsers(users);
       setMessage(message);
       setTimeout(() => {
         setMessage("");
       }, 5000); // hide message after 5 seconds
     });
-    socket.on("userLeftMessage", ({ message, users }) => {
-      console.log("User left message:", message);
-      setUsers(users);
-      setMessage(message);
-      setTimeout(() => {
-        setMessage("");
-      }, 5000); // hide message after 5 seconds
+
+    // Ready status
+    socket.on("readyStatus", ({ username, ready }) => {
+      console.log(`${username} is ${ready ? "ready" : "not ready"}`);
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.username === username ? { ...user, status: ready } : user
+        )
+      );
     });
     return () => {
+      // Cleanup socket event listeners
       socket.off("userJoinedMessage");
       socket.off("userLeftMessage");
+      socket.off("readyStatus");
     };
   }, [socket]);
+
+  const sendReadyStatus = (status) => {
+    if (!socket) return;
+    socket.emit("sendReadyStatus", { username, ready: status });
+  };
 
   return (
     <div>
@@ -52,12 +75,28 @@ function Room() {
         <p>Users:</p>
         <ul>
           {users.map((user, index) => (
-            <li key={index}>{user}</li>
+            <li key={index}>
+              {user.username} {user.username === username && "(You)"} -{" "}
+              {user.status ? "Ready" : "Not Ready"}
+            </li>
           ))}
         </ul>
       </div>
       <Chat username={username} />
       <DrawingBoard />
+      <div>
+        <button onClick={() => sendReadyStatus(true)}>Start</button>
+        <button
+          onClick={() => {
+            if (!socket) return;
+            socket.emit("leaveRoom", { roomCode, username }, () => {
+              navigate("/"); // client-side navigation
+            });
+          }}
+        >
+          Leave Room
+        </button>
+      </div>
     </div>
   );
 }

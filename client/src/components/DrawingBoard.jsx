@@ -27,47 +27,65 @@ function DrawingBoard() {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("drawing", ({ offsetX, offsetY, type, color: strokeColor }) => {
-      const ctx = ctxRef.current;
-      if (!ctx) return;
+    socket.on(
+      "drawing",
+      ({
+        offsetX,
+        offsetY,
+        type,
+        color: strokeColor,
+        lineWidth: strokeWidth,
+      }) => {
+        const ctx = ctxRef.current;
+        if (!ctx) return;
 
-      if (type === "eraseStart") {
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.lineWidth = lineWidth;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(offsetX, offsetY);
-      } else if (type === "eraseDraw") {
-        ctx.lineTo(offsetX, offsetY);
-        ctx.stroke();
-      } else if (type === "eraseStop") {
-        ctx.closePath();
-        ctx.globalCompositeOperation = "source-over";
-      } else {
-        ctx.globalCompositeOperation = "source-over";
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = lineWidth;
-
-        if (type === "start") {
+        if (type === "clear") {
+          ctx.clearRect(0, 0, 400, 400);
+        } else if (type === "eraseStart") {
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.lineWidth = lineWidth;
+          ctx.lineCap = "round";
           ctx.beginPath();
           ctx.moveTo(offsetX, offsetY);
-        } else if (type === "draw") {
+        } else if (type === "eraseDraw") {
           ctx.lineTo(offsetX, offsetY);
           ctx.stroke();
-        } else if (type === "stop") {
+        } else if (type === "eraseStop") {
           ctx.closePath();
+          ctx.globalCompositeOperation = "source-over";
+        } else {
+          ctx.globalCompositeOperation = "source-over";
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = strokeWidth;
+
+          if (type === "start") {
+            ctx.beginPath();
+            ctx.moveTo(offsetX, offsetY);
+          } else if (type === "draw") {
+            ctx.lineTo(offsetX, offsetY);
+            ctx.stroke();
+          } else if (type === "stop") {
+            ctx.closePath();
+          }
         }
       }
-    });
+    );
 
     return () => {
       socket.off("drawing");
     };
   }, [socket]);
 
+  const clear = () => {
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    ctx.clearRect(0, 0, 400, 400);
+    emitDrawing(null, null, "clear");
+  };
+
   const emitDrawing = (offsetX, offsetY, type) => {
     if (!socket) return;
-    socket.emit("drawing", { offsetX, offsetY, type, color }); // send current color with drawing data
+    socket.emit("drawing", { offsetX, offsetY, type, color, lineWidth }); // send current color with drawing data
   };
 
   const startDrawing = ({ nativeEvent }) => {
@@ -146,9 +164,7 @@ function DrawingBoard() {
           value={color}
           onChange={(e) => setColor(e.target.value)}
         />
-        <button onClick={() => ctxRef.current.clearRect(0, 0, 400, 400)}>
-          Clear
-        </button>
+        <button onClick={() => clear()}>Clear</button>
         <button onClick={() => setEraserMode((prev) => !prev)}>
           {eraserMode ? "Switch to Draw" : "Erase"}
         </button>
