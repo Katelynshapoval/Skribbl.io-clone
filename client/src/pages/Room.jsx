@@ -12,49 +12,72 @@ function Room() {
   const navigate = useNavigate();
 
   // User information
-  const username = location.state?.username || "Guest";
-  const { roomCode } = useParams(); // from URL /room/:roomCode
-  const [users, setUsers] = useState(location.state?.users || []);
+  const storedUsername = sessionStorage.getItem("username");
+  const storedRoomCode = sessionStorage.getItem("roomCode");
+
+  // Determine username and room code
+  const username = storedUsername || location.state?.username || "Guest";
+  const roomCode = storedRoomCode || useParams().roomCode;
+
+  const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
 
   // Socket event listeners
   useEffect(() => {
     if (!socket) return;
-    // User joined message
-    socket.on("userJoinedMessage", ({ message, users }) => {
-      setUsers(users);
-      setMessage(message);
-      console.log(users);
-      setTimeout(() => {
-        setMessage("");
-      }, 5000); // hide message after 5 seconds
-    });
 
-    // User left message
-    socket.on("userLeftMessage", ({ message, users }) => {
-      setUsers(users);
-      setMessage(message);
-      setTimeout(() => {
-        setMessage("");
-      }, 5000); // hide message after 5 seconds
-    });
+    // Auto rejoin after refresh
+    const storedUsername = sessionStorage.getItem("username");
+    const storedRoomCode = sessionStorage.getItem("roomCode");
 
-    // Ready status
-    socket.on("readyStatus", ({ username, ready }) => {
-      console.log(`${username} is ${ready ? "ready" : "not ready"}`);
+    if (storedUsername && storedRoomCode) {
+      socket.emit("joinRoom", {
+        username: storedUsername,
+        roomCode: storedRoomCode,
+      });
+    } else {
+      navigate("/"); // redirect if no session
+      return;
+    }
+
+    // Socket event listeners
+    const handleRoomJoined = ({ users }) => {
+      setUsers(users); // overwrite full list
+    };
+
+    const handleUserJoined = ({ message, users }) => {
+      setUsers(users); // overwrite full list
+      setMessage(message);
+      setTimeout(() => setMessage(""), 5000);
+    };
+
+    const handleUserLeft = ({ message, users }) => {
+      setUsers(users); // overwrite full list
+      setMessage(message);
+      setTimeout(() => setMessage(""), 5000);
+    };
+
+    const handleReadyStatus = ({ username, ready }) => {
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.username === username ? { ...user, status: ready } : user
         )
       );
-    });
-    return () => {
-      // Cleanup socket event listeners
-      socket.off("userJoinedMessage");
-      socket.off("userLeftMessage");
-      socket.off("readyStatus");
     };
-  }, [socket]);
+
+    socket.on("roomJoined", handleRoomJoined);
+    socket.on("userJoinedMessage", handleUserJoined);
+    socket.on("userLeftMessage", handleUserLeft);
+    socket.on("readyStatus", handleReadyStatus);
+
+    // Cleanup listeners on unmount
+    return () => {
+      socket.off("roomJoined", handleRoomJoined);
+      socket.off("userJoinedMessage", handleUserJoined);
+      socket.off("userLeftMessage", handleUserLeft);
+      socket.off("readyStatus", handleReadyStatus);
+    };
+  }, [socket, navigate]);
 
   const sendReadyStatus = (status) => {
     if (!socket) return;
@@ -90,6 +113,8 @@ function Room() {
           onClick={() => {
             if (!socket) return;
             socket.emit("leaveRoom", { roomCode, username }, () => {
+              sessionStorage.removeItem("username");
+              sessionStorage.removeItem("roomCode");
               navigate("/"); // client-side navigation
             });
           }}

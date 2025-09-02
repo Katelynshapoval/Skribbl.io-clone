@@ -12,13 +12,14 @@ function Home() {
 
   useEffect(() => {
     if (!socket) return;
-
+    // Join room if user is returning
     const handleRoomJoined = ({ roomCode, users }) => {
       navigate(`/room/${roomCode}`, {
         state: { username, users, roomCode },
       });
     };
 
+    // Handle errors
     const handleError = (message) => {
       setError(message);
       setTimeout(() => setError(null), 5000);
@@ -36,17 +37,27 @@ function Home() {
   const handleJoinRoom = (e) => {
     e.preventDefault();
     if (roomCode.trim() && socket) {
+      // Join the room
       socket.emit("joinRoom", { roomCode, username });
+      // Save to session storage for refresh persistence
+      sessionStorage.setItem("username", username);
+      sessionStorage.setItem("roomCode", roomCode);
+      // Clear the form
       setRoomCode("");
     }
   };
 
+  // Create a new room
   const handleCreateRoom = (e) => {
     e.preventDefault();
+    // If username is provided
     if (username.trim() && socket) {
       socket.emit("createRoom", { username });
 
+      // Save to session storage for refresh persistence
       socket.once("roomCreated", ({ roomCode, users }) => {
+        sessionStorage.setItem("username", username);
+        sessionStorage.setItem("roomCode", roomCode);
         navigate(`/room/${roomCode}`, { state: { username, users, roomCode } });
       });
     }
