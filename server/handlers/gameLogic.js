@@ -25,7 +25,9 @@ function handleSubmitGuess(socket) {
     const correctWord = activeRooms.get(roomCode).word;
     if (guess === correctWord) {
       socket.emit("guessResult", { correct: true });
-      socket.to(roomCode).emit("userGuessedCorrectly", { username });
+      socket
+        .to(roomCode)
+        .emit("userGuessedCorrectly", { username, word: correctWord });
     } else {
       socket.emit("guessResult", { correct: false });
     }

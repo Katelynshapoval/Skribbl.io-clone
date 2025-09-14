@@ -170,8 +170,13 @@ function DrawingBoard({ username, userToPaint }) {
           value={color}
           onChange={(e) => setColor(e.target.value)}
         />
-        <button onClick={() => clear()}>Clear</button>
-        <button onClick={() => setEraserMode((prev) => !prev)}>
+        <button disabled={!isAllowedToDraw} onClick={() => clear()}>
+          Clear
+        </button>
+        <button
+          disabled={!isAllowedToDraw}
+          onClick={() => setEraserMode((prev) => !prev)}
+        >
           {eraserMode ? "Switch to Draw" : "Erase"}
         </button>
         <input

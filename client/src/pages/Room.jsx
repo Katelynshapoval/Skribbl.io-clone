@@ -22,8 +22,9 @@ function Room() {
   const [users, setUsers] = useState([]);
   const [userToPaint, setUserToPaint] = useState(null);
   const [message, setMessage] = useState("");
+  const [ready, setReady] = useState(false);
 
-  // Word input state
+  // Word input and guessing states
   const [wordInputVisible, setWordInputVisible] = useState(false);
   const [wordGuessVisible, setWordGuessVisible] = useState(false);
   const [submittedWord, setSubmittedWord] = useState("");
@@ -109,6 +110,12 @@ function Room() {
       }
       setTimeout(() => setMessage(""), 5000);
     });
+    socket.on("userGuessedCorrectly", ({ username, word }) => {
+      setMessage(
+        `${username} guessed the word correctly! The word was: ${word}`
+      );
+      setTimeout(() => setMessage(""), 5000);
+    });
 
     // Cleanup listeners on unmount
     return () => {
@@ -141,10 +148,19 @@ function Room() {
     <div>
       <h1>Welcome to the Room, {username}!</h1>
       <p>Room Code: {roomCode || "Not provided"}</p>
+      <p>
+        Drawer:{" "}
+        {userToPaint ? <strong>{userToPaint}</strong> : "Waiting for drawer..."}
+      </p>
 
       {message && <div className="notification">{message}</div>}
       {wordInputVisible && userToPaint === username && (
-        <form>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitWord();
+          }}
+        >
           <h3>You are the drawer! Please submit a word to draw:</h3>
           <input
             type="text"
@@ -152,15 +168,7 @@ function Room() {
             value={submittedWord}
             onChange={(e) => setSubmittedWord(e.target.value)}
           />
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              submitWord();
-            }}
-          >
-            Submit
-          </button>
+          <button type="submit">Submit</button>
         </form>
       )}
       {wordGuessVisible && userToPaint !== username && (
@@ -200,7 +208,18 @@ function Room() {
       <Chat username={username} />
       <DrawingBoard username={username} userToPaint={userToPaint} />
       <div>
-        <button onClick={() => sendReadyStatus(true)}>Start</button>
+        {!ready ? (
+          <button
+            onClick={() => {
+              setReady(true);
+              sendReadyStatus(true);
+            }}
+          >
+            Ready
+          </button>
+        ) : (
+          ""
+        )}
         <button
           onClick={() => {
             if (!socket) return;
