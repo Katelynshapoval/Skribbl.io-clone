@@ -20,7 +20,14 @@ function Room() {
   const roomCode = storedRoomCode || useParams().roomCode;
 
   const [users, setUsers] = useState([]);
+  const [userToPaint, setUserToPaint] = useState(null);
   const [message, setMessage] = useState("");
+
+  // Word input state
+  const [wordInputVisible, setWordInputVisible] = useState(false);
+  const [wordGuessVisible, setWordGuessVisible] = useState(false);
+  const [submittedWord, setSubmittedWord] = useState("");
+  const [submittedGuess, setSubmittedGuess] = useState("");
 
   // Socket event listeners
   useEffect(() => {
@@ -65,10 +72,43 @@ function Room() {
       );
     };
 
+    const handleAllReady = ({ message, userToStart }) => {
+      setMessage(message);
+      setUserToPaint(userToStart);
+      if (userToStart === username) {
+        setWordInputVisible(true);
+      }
+      setTimeout(() => setMessage(""), 5000);
+    };
+
+    const handleWordAccepted = ({ word }) => {
+      setMessage(`Word accepted: ${word}`);
+      setWordInputVisible(false);
+      setTimeout(() => setMessage(""), 5000);
+    };
+
+    const handleWordSubmitted = ({ username }) => {
+      setMessage(`${username} has submitted a word. Start guessing!`);
+      setUserToPaint(username);
+      setTimeout(() => setMessage(""), 5000);
+      setWordGuessVisible(true);
+    };
+
     socket.on("roomJoined", handleRoomJoined);
     socket.on("userJoinedMessage", handleUserJoined);
     socket.on("userLeftMessage", handleUserLeft);
     socket.on("readyStatus", handleReadyStatus);
+    socket.on("allReady", handleAllReady);
+    socket.on("wordAccepted", handleWordAccepted);
+    socket.on("wordSubmitted", handleWordSubmitted);
+    socket.on("guessResult", ({ correct }) => {
+      if (correct) {
+        setMessage("Correct guess!");
+      } else {
+        setMessage("Incorrect guess. Try again!");
+      }
+      setTimeout(() => setMessage(""), 5000);
+    });
 
     // Cleanup listeners on unmount
     return () => {
@@ -76,6 +116,8 @@ function Room() {
       socket.off("userJoinedMessage", handleUserJoined);
       socket.off("userLeftMessage", handleUserLeft);
       socket.off("readyStatus", handleReadyStatus);
+      socket.off("allReady", handleAllReady);
+      socket.off("wordAccepted", handleWordAccepted);
     };
   }, [socket, navigate]);
 
@@ -84,12 +126,62 @@ function Room() {
     socket.emit("sendReadyStatus", { username, ready: status });
   };
 
+  const submitWord = () => {
+    setWordInputVisible(false);
+    socket.emit("submitWord", { word: submittedWord, roomCode, username });
+    setSubmittedWord("");
+  };
+
+  const submitGuess = () => {
+    socket.emit("submitGuess", { guess: submittedGuess, roomCode, username });
+    setSubmittedGuess("");
+  };
+
   return (
     <div>
       <h1>Welcome to the Room, {username}!</h1>
       <p>Room Code: {roomCode || "Not provided"}</p>
 
       {message && <div className="notification">{message}</div>}
+      {wordInputVisible && userToPaint === username && (
+        <form>
+          <h3>You are the drawer! Please submit a word to draw:</h3>
+          <input
+            type="text"
+            placeholder="Enter a word"
+            value={submittedWord}
+            onChange={(e) => setSubmittedWord(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              submitWord();
+            }}
+          >
+            Submit
+          </button>
+        </form>
+      )}
+      {wordGuessVisible && userToPaint !== username && (
+        <div className="wordGuess">
+          <h3>Guess the word being drawn by {userToPaint}!</h3>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitGuess();
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Enter your guess here"
+              value={submittedGuess}
+              onChange={(e) => setSubmittedGuess(e.target.value)}
+            />
+            <button type="submit">Submit Guess</button>
+          </form>
+        </div>
+      )}
 
       <div className="roomInfo">
         <h2>Room Information</h2>
@@ -106,7 +198,7 @@ function Room() {
         </ul>
       </div>
       <Chat username={username} />
-      <DrawingBoard />
+      <DrawingBoard username={username} userToPaint={userToPaint} />
       <div>
         <button onClick={() => sendReadyStatus(true)}>Start</button>
         <button

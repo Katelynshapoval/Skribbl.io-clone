@@ -5,6 +5,11 @@ const {
   handleReadyStatus,
 } = require("../handlers/rooms");
 
+const {
+  handleSubmitWord,
+  handleSubmitGuess,
+} = require("../handlers/gameLogic");
+
 module.exports = (io) => {
   io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
@@ -12,8 +17,12 @@ module.exports = (io) => {
     // Handle joining, creating, and leaving rooms
     handleJoinRoom(socket);
     handleCreateRoom(socket);
-    handleLeaveRoom(socket);
+    handleLeaveRoom(socket, io);
     handleReadyStatus(socket, io);
+
+    // Game logic handlers
+    handleSubmitWord(socket);
+    handleSubmitGuess(socket);
 
     socket.on("sendMessage", (message) => {
       io.emit("receiveMessage", message);
