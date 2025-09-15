@@ -21,7 +21,7 @@ function Room() {
 
   const [users, setUsers] = useState([]);
   const [userToPaint, setUserToPaint] = useState(null);
-  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
   const [ready, setReady] = useState(false);
 
   // Word input and guessing states
@@ -30,23 +30,25 @@ function Room() {
   const [submittedWord, setSubmittedWord] = useState("");
   const [submittedGuess, setSubmittedGuess] = useState("");
 
+  // Helper to add a message with auto-remove
+  const addMessage = (text) => {
+    const id = Date.now() + Math.random(); // ensure unique id
+    setMessages((prev) => {
+      // add the new message
+      const updated = [...prev, { id, text }];
+
+      // ✅ keep only the last 3 messages
+      return updated.slice(-3);
+    });
+
+    setTimeout(() => {
+      setMessages((prev) => prev.filter((msg) => msg.id !== id));
+    }, 5000);
+  };
+
   // Socket event listeners
   useEffect(() => {
     if (!socket) return;
-
-    // Auto rejoin after refresh
-    const storedUsername = sessionStorage.getItem("username");
-    const storedRoomCode = sessionStorage.getItem("roomCode");
-
-    if (storedUsername && storedRoomCode) {
-      socket.emit("joinRoom", {
-        username: storedUsername,
-        roomCode: storedRoomCode,
-      });
-    } else {
-      navigate("/"); // redirect if no session
-      return;
-    }
 
     // Socket event listeners
     const handleRoomJoined = ({ users }) => {
@@ -55,14 +57,12 @@ function Room() {
 
     const handleUserJoined = ({ message, users }) => {
       setUsers(users); // overwrite full list
-      setMessage(message);
-      setTimeout(() => setMessage(""), 5000);
+      addMessage(message);
     };
 
     const handleUserLeft = ({ message, users }) => {
       setUsers(users); // overwrite full list
-      setMessage(message);
-      setTimeout(() => setMessage(""), 5000);
+      addMessage(message);
     };
 
     const handleReadyStatus = ({ username, ready }) => {
@@ -74,24 +74,21 @@ function Room() {
     };
 
     const handleAllReady = ({ message, userToStart }) => {
-      setMessage(message);
+      addMessage(message);
       setUserToPaint(userToStart);
       if (userToStart === username) {
         setWordInputVisible(true);
       }
-      setTimeout(() => setMessage(""), 5000);
     };
 
     const handleWordAccepted = ({ word }) => {
-      setMessage(`Word accepted: ${word}`);
+      addMessage(`Word accepted: ${word}`);
       setWordInputVisible(false);
-      setTimeout(() => setMessage(""), 5000);
     };
 
     const handleWordSubmitted = ({ username }) => {
-      setMessage(`${username} has submitted a word. Start guessing!`);
+      addMessage(`${username} has submitted a word. Start guessing!`);
       setUserToPaint(username);
-      setTimeout(() => setMessage(""), 5000);
       setWordGuessVisible(true);
     };
 
@@ -103,18 +100,18 @@ function Room() {
     socket.on("wordAccepted", handleWordAccepted);
     socket.on("wordSubmitted", handleWordSubmitted);
     socket.on("guessResult", ({ correct }) => {
-      if (correct) {
-        setMessage("Correct guess!");
-      } else {
-        setMessage("Incorrect guess. Try again!");
-      }
-      setTimeout(() => setMessage(""), 5000);
+      addMessage(correct ? "Correct guess!" : "Incorrect guess. Try again!");
     });
+
     socket.on("userGuessedCorrectly", ({ username, word }) => {
-      setMessage(
+      addMessage(
         `${username} guessed the word correctly! The word was: ${word}`
       );
-      setTimeout(() => setMessage(""), 5000);
+    });
+
+    // Drawer sees guesses
+    socket.on("newGuess", ({ username, guess }) => {
+      addMessage(`${username} guessed: ${guess}`);
     });
 
     // Cleanup listeners on unmount
@@ -125,6 +122,10 @@ function Room() {
       socket.off("readyStatus", handleReadyStatus);
       socket.off("allReady", handleAllReady);
       socket.off("wordAccepted", handleWordAccepted);
+      socket.off("wordSubmitted", handleWordSubmitted);
+      socket.off("guessResult");
+      socket.off("userGuessedCorrectly");
+      socket.off("newGuess");
     };
   }, [socket, navigate]);
 
@@ -153,7 +154,13 @@ function Room() {
         {userToPaint ? <strong>{userToPaint}</strong> : "Waiting for drawer..."}
       </p>
 
-      {message && <div className="notification">{message}</div>}
+      <div className="notifications">
+        {messages.map((msg) => (
+          <div key={msg.id} className="notification">
+            {msg.text}
+          </div>
+        ))}
+      </div>
       {wordInputVisible && userToPaint === username && (
         <form
           onSubmit={(e) => {

@@ -4,8 +4,14 @@ function handleSubmitWord(socket) {
   socket.on("submitWord", ({ word, roomCode, username }) => {
     if (!roomCode || !username) return;
 
+    const room = activeRooms.get(roomCode);
+    if (!room) return;
+
     // Store the current word for the room
-    activeRooms.get(roomCode).word = word;
+    room.word = word;
+
+    // Save the drawing player's socket id
+    room.drawingPlayerSocketId = socket.id;
 
     // Notify the drawer that their word was accepted
     socket.emit("wordAccepted", { word });
@@ -21,8 +27,11 @@ function handleSubmitGuess(socket) {
   socket.on("submitGuess", ({ guess, roomCode, username }) => {
     if (!roomCode || !username) return;
 
+    const room = activeRooms.get(roomCode);
+    if (!room) return;
+
     // Check if the guess is correct
-    const correctWord = activeRooms.get(roomCode).word;
+    const correctWord = room.word;
     if (guess === correctWord) {
       socket.emit("guessResult", { correct: true });
       socket
@@ -30,6 +39,14 @@ function handleSubmitGuess(socket) {
         .emit("userGuessedCorrectly", { username, word: correctWord });
     } else {
       socket.emit("guessResult", { correct: false });
+
+      // Notify the drawing player about the new guess
+      if (room.drawingPlayerSocketId) {
+        socket.to(room.drawingPlayerSocketId).emit("newGuess", {
+          username,
+          guess,
+        });
+      }
     }
   });
 }
