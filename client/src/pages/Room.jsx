@@ -136,12 +136,20 @@ function Room() {
 
   const submitWord = () => {
     setWordInputVisible(false);
-    socket.emit("submitWord", { word: submittedWord, roomCode, username });
+    socket.emit("submitWord", {
+      word: submittedWord.toLowerCase(),
+      roomCode,
+      username,
+    });
     setSubmittedWord("");
   };
 
   const submitGuess = () => {
-    socket.emit("submitGuess", { guess: submittedGuess, roomCode, username });
+    socket.emit("submitGuess", {
+      guess: submittedGuess.toLowerCase(),
+      roomCode,
+      username,
+    });
     setSubmittedGuess("");
   };
 
