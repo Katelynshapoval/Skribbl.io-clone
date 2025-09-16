@@ -51,7 +51,27 @@ function handleSubmitGuess(socket) {
   });
 }
 
+function handleRotateDrawer(socket, io) {
+  socket.on("rotateDrawer", ({ roomCode }) => {
+    if (!roomCode) return;
+
+    const room = activeRooms.get(roomCode);
+    if (!room) return;
+
+    // Rotate the drawer
+    const currentIndex = room.users.findIndex(
+      (user) => user.username === room.drawingPlayer
+    );
+    const nextIndex = (currentIndex + 1) % room.users.length;
+    room.drawingPlayer = room.users[nextIndex].username;
+
+    // Notify all users about the drawer change
+    io.to(roomCode).emit("drawerChanged", { username: room.drawingPlayer });
+  });
+}
+
 module.exports = {
   handleSubmitWord,
   handleSubmitGuess,
+  handleRotateDrawer,
 };

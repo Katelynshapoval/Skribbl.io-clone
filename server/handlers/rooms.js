@@ -20,28 +20,42 @@ function handleJoinRoom(socket) {
     socket.roomCode = roomCode;
 
     // Create the room if it doesn't exist
-    const room = activeRooms.get(roomCode);
-    if (room) {
-      room.players.set(username, { username, status: false });
+    let room = activeRooms.get(roomCode);
+    if (!room) {
+      room = {
+        word: null,
+        round: 1,
+        currentDrawer: null,
+        players: new Map(),
+      };
+      activeRooms.set(roomCode, room);
     }
 
-    console.log(activeRooms, "activeRooms");
+    // Check if user is already in the room (to handle refreshes/reconnections)
+    const isAlreadyInRoom = room.players.has(username);
+
+    // Add this user to the room (or update if already exists)
+    room.players.set(username, { username, status: false });
 
     // Join the socket.io room
     socket.join(roomCode);
 
-    // Notify the user that they have joined
+    // Always notify the user that they have joined (or rejoined)
     socket.emit("roomJoined", {
       roomCode,
-      username,
       users: Array.from(room.players.values()),
     });
 
-    // Notify other users in the room
-    socket.to(roomCode).emit("userJoinedMessage", {
-      message: `${username} has joined the room.`,
-      users: Array.from(room.players.values()),
-    });
+    // Only notify other users if this is a new join (not a refresh/reconnect)
+    if (!isAlreadyInRoom) {
+      socket.to(roomCode).emit("userJoinedMessage", {
+        message: `${username} has joined the room.`,
+        users: Array.from(room.players.values()),
+      });
+      console.log(`${username} joined room: ${roomCode}`);
+    } else {
+      console.log(`${username} reconnected to room: ${roomCode}`);
+    }
   });
 }
 
@@ -55,19 +69,29 @@ function handleCreateRoom(socket) {
     socket.roomCode = roomCode;
 
     // Create the room and add the creator as the first player
-    activeRooms.set(roomCode, {
+    const room = {
       word: null,
       round: 1,
       currentDrawer: null,
       players: new Map([[username, { username, status: false }]]),
-    });
+    };
+    activeRooms.set(roomCode, room);
 
     socket.join(roomCode);
 
+    // Send roomCreated to the creator
     socket.emit("roomCreated", {
       roomCode,
-      users: Array.from(activeRooms.get(roomCode).players.values()),
+      users: Array.from(room.players.values()),
     });
+
+    // Also send roomJoined so the same handler can process it
+    socket.emit("roomJoined", {
+      roomCode,
+      users: Array.from(room.players.values()),
+    });
+
+    console.log(`${username} created room: ${roomCode}`);
   });
 }
 

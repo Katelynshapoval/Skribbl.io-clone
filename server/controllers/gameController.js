@@ -8,11 +8,12 @@ const {
 const {
   handleSubmitWord,
   handleSubmitGuess,
+  handleRotateDrawer,
 } = require("../handlers/gameLogic");
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
+    console.log("hi");
 
     // Handle joining, creating, and leaving rooms
     handleJoinRoom(socket);
@@ -23,6 +24,7 @@ module.exports = (io) => {
     // Game logic handlers
     handleSubmitWord(socket);
     handleSubmitGuess(socket);
+    handleRotateDrawer(socket, io);
 
     socket.on("sendMessage", (message) => {
       io.emit("receiveMessage", message);

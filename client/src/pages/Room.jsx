@@ -37,7 +37,7 @@ function Room() {
       // add the new message
       const updated = [...prev, { id, text }];
 
-      // ✅ keep only the last 3 messages
+      // keep only the last 3 messages
       return updated.slice(-3);
     });
 
@@ -50,18 +50,31 @@ function Room() {
   useEffect(() => {
     if (!socket) return;
 
+    // If we have username and roomCode, emit joinRoom to get current state
+    if (username && roomCode) {
+      socket.emit("joinRoom", { roomCode, username });
+    }
+
     // Socket event listeners
-    const handleRoomJoined = ({ users }) => {
-      setUsers(users); // overwrite full list
+    const handleRoomJoined = ({ roomCode, users }) => {
+      console.log("Room joined:", roomCode, users);
+      setUsers(users || []); // ensure users is always an array
+    };
+
+    const handleRoomCreated = ({ roomCode, users }) => {
+      console.log("Room created:", roomCode, users);
+      setUsers(users || []); // ensure users is always an array
     };
 
     const handleUserJoined = ({ message, users }) => {
-      setUsers(users); // overwrite full list
+      console.log("User joined:", message);
+      setUsers(users || []); // ensure users is always an array
       addMessage(message);
     };
 
     const handleUserLeft = ({ message, users }) => {
-      setUsers(users); // overwrite full list
+      console.log("User left:", message);
+      setUsers(users || []); // ensure users is always an array
       addMessage(message);
     };
 
@@ -79,6 +92,12 @@ function Room() {
       if (userToStart === username) {
         setWordInputVisible(true);
       }
+    };
+
+    const handleRotateDrawer = ({ newDrawer }) => {
+      setUserToPaint(newDrawer);
+      setWordGuessVisible(newDrawer !== username);
+      setWordInputVisible(newDrawer === username);
     };
 
     const handleWordAccepted = ({ word }) => {
@@ -107,12 +126,24 @@ function Room() {
       addMessage(
         `${username} guessed the word correctly! The word was: ${word}`
       );
+      setWordGuessVisible(false);
+      setUserToPaint(null);
+      setWordInputVisible(false);
+
+      // Rotate drawer after a short delay
+      setTimeout(() => {
+        socket.emit("rotateDrawer", { roomCode });
+      }, 3000);
     });
 
     // Drawer sees guesses
     socket.on("newGuess", ({ username, guess }) => {
       addMessage(`${username} guessed: ${guess}`);
     });
+
+    // Rotate drawer
+    socket.on("rotateDrawer", handleRotateDrawer);
+    socket.on("roomCreated", handleRoomCreated);
 
     // Cleanup listeners on unmount
     return () => {
@@ -126,8 +157,10 @@ function Room() {
       socket.off("guessResult");
       socket.off("userGuessedCorrectly");
       socket.off("newGuess");
+      socket.off("rotateDrawer", handleRotateDrawer);
+      socket.off("roomCreated", handleRoomCreated);
     };
-  }, [socket, navigate]);
+  }, [socket, username, roomCode]); // Added username and roomCode as dependencies
 
   const sendReadyStatus = (status) => {
     if (!socket) return;
