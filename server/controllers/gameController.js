@@ -23,7 +23,7 @@ module.exports = (io) => {
 
     // Game logic handlers
     handleSubmitWord(socket);
-    handleSubmitGuess(socket);
+    handleSubmitGuess(socket, io);
     handleRotateDrawer(socket, io);
 
     socket.on("sendMessage", (message) => {

@@ -1,7 +1,16 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { useSocket } from "../context/SocketContext";
 
-function DrawingBoard({ username, userToPaint }) {
+const DrawingBoard = forwardRef(function DrawingBoard(
+  { username, userToPaint },
+  ref
+) {
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
   const socket = useSocket();
@@ -15,6 +24,11 @@ function DrawingBoard({ username, userToPaint }) {
 
   // Determine if the user is allowed to draw
   const isAllowedToDraw = !userToPaint || userToPaint === username;
+
+  // --- expose the clear() function to Room.jsx ---
+  useImperativeHandle(ref, () => ({
+    clear,
+  }));
 
   // Initialize canvas once on mount
   useEffect(() => {
@@ -189,6 +203,6 @@ function DrawingBoard({ username, userToPaint }) {
       </div>
     </div>
   );
-}
+});
 
 export default DrawingBoard;

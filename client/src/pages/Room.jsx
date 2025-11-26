@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import Chat from "../components/Chat";
 import DrawingBoard from "../components/DrawingBoard";
@@ -10,6 +10,8 @@ function Room() {
   const location = useLocation();
   const socket = useSocket();
   const navigate = useNavigate();
+
+  const boardRef = useRef();
 
   // User information
   const storedUsername = sessionStorage.getItem("username");
@@ -95,6 +97,7 @@ function Room() {
     };
 
     const handleRotateDrawer = ({ newDrawer }) => {
+      console.log(newDrawer);
       setUserToPaint(newDrawer);
       setWordGuessVisible(newDrawer !== username);
       setWordInputVisible(newDrawer === username);
@@ -132,6 +135,7 @@ function Room() {
 
       // Rotate drawer after a short delay
       setTimeout(() => {
+        boardRef.current?.clear();
         socket.emit("rotateDrawer", { roomCode });
       }, 3000);
     });
@@ -142,7 +146,7 @@ function Room() {
     });
 
     // Rotate drawer
-    socket.on("rotateDrawer", handleRotateDrawer);
+    socket.on("drawerChanged", handleRotateDrawer);
     socket.on("roomCreated", handleRoomCreated);
 
     // Cleanup listeners on unmount
@@ -254,7 +258,11 @@ function Room() {
         </ul>
       </div>
       <Chat username={username} />
-      <DrawingBoard username={username} userToPaint={userToPaint} />
+      <DrawingBoard
+        ref={boardRef}
+        username={username}
+        userToPaint={userToPaint}
+      />
       <div>
         {!ready ? (
           <button

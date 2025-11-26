@@ -23,7 +23,7 @@ function handleSubmitWord(socket) {
   });
 }
 
-function handleSubmitGuess(socket) {
+function handleSubmitGuess(socket, io) {
   socket.on("submitGuess", ({ guess, roomCode, username }) => {
     if (!roomCode || !username) return;
 
@@ -34,9 +34,10 @@ function handleSubmitGuess(socket) {
     const correctWord = room.word;
     if (guess === correctWord) {
       socket.emit("guessResult", { correct: true });
-      socket
-        .to(roomCode)
-        .emit("userGuessedCorrectly", { username, word: correctWord });
+      io.to(roomCode).emit("userGuessedCorrectly", {
+        username,
+        word: correctWord,
+      });
     } else {
       socket.emit("guessResult", { correct: false });
 
@@ -56,17 +57,29 @@ function handleRotateDrawer(socket, io) {
     if (!roomCode) return;
 
     const room = activeRooms.get(roomCode);
-    if (!room) return;
+    if (!room || !room.players || room.players.size === 0) return;
 
-    // Rotate the drawer
-    const currentIndex = room.users.findIndex(
-      (user) => user.username === room.drawingPlayer
+    // Convert Map -> array of player objects
+    const playersArray = [...room.players.values()];
+
+    // Current drawer username
+    const currentDrawer = room.currentDrawer;
+
+    const currentIndex = playersArray.findIndex(
+      (p) => p.username === currentDrawer
     );
-    const nextIndex = (currentIndex + 1) % room.users.length;
-    room.drawingPlayer = room.users[nextIndex].username;
 
-    // Notify all users about the drawer change
-    io.to(roomCode).emit("drawerChanged", { username: room.drawingPlayer });
+    // fallback in case drawer isn't found
+    const nextIndex =
+      currentIndex === -1 ? 0 : (currentIndex + 1) % playersArray.length;
+
+    // Update the drawer
+    room.currentDrawer = playersArray[nextIndex].username;
+    console.log(room.currentDrawer);
+
+    io.to(roomCode).emit("drawerChanged", {
+      newDrawer: room.currentDrawer,
+    });
   });
 }
 
