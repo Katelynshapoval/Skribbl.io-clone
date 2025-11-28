@@ -23,7 +23,7 @@ const DrawingBoard = forwardRef(function DrawingBoard(
   const [color, setColor] = useState("#000000");
 
   // Determine if the user is allowed to draw
-  const isAllowedToDraw = !userToPaint || userToPaint === username;
+  const isAllowedToDraw = userToPaint === username;
 
   // --- expose the clear() function to Room.jsx ---
   useImperativeHandle(ref, () => ({
