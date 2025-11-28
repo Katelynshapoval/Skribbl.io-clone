@@ -11,6 +11,7 @@ function Room() {
   const socket = useSocket();
   const navigate = useNavigate();
 
+  // References
   const boardRef = useRef();
 
   // User information
@@ -36,7 +37,7 @@ function Room() {
   const addMessage = (text) => {
     const id = Date.now() + Math.random(); // ensure unique id
     setMessages((prev) => {
-      // add the new message
+      // Add the new message to the prev ones
       const updated = [...prev, { id, text }];
 
       // keep only the last 3 messages
@@ -97,7 +98,7 @@ function Room() {
     };
 
     const handleRotateDrawer = ({ newDrawer }) => {
-      console.log(newDrawer);
+      console.log("New Drawer ", newDrawer);
       setUserToPaint(newDrawer);
       setWordGuessVisible(newDrawer !== username);
       setWordInputVisible(newDrawer === username);
@@ -114,6 +115,20 @@ function Room() {
       setWordGuessVisible(true);
     };
 
+    const handleUserGuessedCorrectly = ({ username, word }) => {
+      addMessage(
+        `${username} guessed the word correctly! The word was: ${word}`
+      );
+      setWordGuessVisible(false);
+      setUserToPaint(null);
+      setWordInputVisible(false);
+
+      // Clear the board after a short delay
+      setTimeout(() => {
+        boardRef.current?.clear();
+      }, 3000);
+    };
+
     socket.on("roomJoined", handleRoomJoined);
     socket.on("userJoinedMessage", handleUserJoined);
     socket.on("userLeftMessage", handleUserLeft);
@@ -125,20 +140,7 @@ function Room() {
       addMessage(correct ? "Correct guess!" : "Incorrect guess. Try again!");
     });
 
-    socket.on("userGuessedCorrectly", ({ username, word }) => {
-      addMessage(
-        `${username} guessed the word correctly! The word was: ${word}`
-      );
-      setWordGuessVisible(false);
-      setUserToPaint(null);
-      setWordInputVisible(false);
-
-      // Rotate drawer after a short delay
-      setTimeout(() => {
-        boardRef.current?.clear();
-        socket.emit("rotateDrawer", { roomCode });
-      }, 3000);
-    });
+    socket.on("userGuessedCorrectly", handleUserGuessedCorrectly);
 
     // Drawer sees guesses
     socket.on("newGuess", ({ username, guess }) => {
@@ -159,7 +161,7 @@ function Room() {
       socket.off("wordAccepted", handleWordAccepted);
       socket.off("wordSubmitted", handleWordSubmitted);
       socket.off("guessResult");
-      socket.off("userGuessedCorrectly");
+      socket.off("userGuessedCorrectly", handleUserGuessedCorrectly);
       socket.off("newGuess");
       socket.off("rotateDrawer", handleRotateDrawer);
       socket.off("roomCreated", handleRoomCreated);
