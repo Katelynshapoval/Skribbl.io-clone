@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "../context/SocketContext";
+import "../css/home.css";
+import Error from "../components/Error";
 
 function Home() {
   const [username, setUsername] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState(null);
+  const [showError, setShowError] = useState(false);
 
   const navigate = useNavigate();
   const socket = useSocket();
@@ -36,6 +39,13 @@ function Home() {
 
   const handleJoinRoom = (e) => {
     e.preventDefault();
+    if (!username.trim()) {
+      triggerError("Please enter a username before joining a room.");
+      return;
+    }
+
+    setError("");
+
     if (roomCode.trim() && socket) {
       // Join the room
       socket.emit("joinRoom", { roomCode, username });
@@ -47,9 +57,26 @@ function Home() {
     }
   };
 
+  const triggerError = (message) => {
+    setError(message);
+    setShowError(true);
+
+    setTimeout(() => {
+      setShowError(false);
+    }, 3000);
+  };
+
   // Create a new room
   const handleCreateRoom = (e) => {
     e.preventDefault();
+
+    if (!username.trim()) {
+      triggerError("Please enter a username before creating a room.");
+      return;
+    }
+
+    setError("");
+
     // If username is provided
     if (username.trim() && socket) {
       socket.emit("createRoom", { username });
@@ -64,41 +91,66 @@ function Home() {
   };
 
   return (
-    <div>
-      {error && <div className="errorMessage">{error}</div>}
-      <label htmlFor="username">Username:</label>
-      <input
-        type="text"
-        id="username"
-        name="username"
-        value={username}
-        autoComplete="off"
-        onChange={(e) => setUsername(e.target.value)}
-        required
-      />
-
-      <h2>Join a Room</h2>
-      <form onSubmit={handleJoinRoom}>
-        <label htmlFor="roomCode">Room Code:</label>
+    <div className="homePage">
+      <Error
+        className={`errorToast ${showError ? "show" : ""}`}
+        message={error}
+      ></Error>
+      <div className="usernameInputBox">
+        <label htmlFor="username">Username</label>
         <input
           type="text"
-          id="roomCode"
-          name="roomCode"
-          placeholder="Enter room code"
+          id="username"
+          name="username"
+          value={username}
           autoComplete="off"
-          value={roomCode}
-          onChange={(e) => setRoomCode(e.target.value)}
+          onChange={(e) => setUsername(e.target.value)}
           required
         />
-        <button type="submit">Join Game</button>
-      </form>
+      </div>
 
-      <p>Or</p>
+      <div className="rooms">
+        <div className="joinRoomBox">
+          <h2>Join a Room</h2>
+          <form onSubmit={handleJoinRoom}>
+            <label htmlFor="roomCode" hidden>
+              Room Code:
+            </label>
+            <input
+              type="text"
+              id="roomCode"
+              name="roomCode"
+              placeholder="Enter room code"
+              autoComplete="off"
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value)}
+              required
+            />
+            <button type="submit">Join Game</button>
+          </form>
+        </div>
 
-      <h2>Create a Room</h2>
-      <form onSubmit={handleCreateRoom}>
-        <button type="submit">Create Room</button>
-      </form>
+        <p>Or</p>
+
+        <div className="createRoomBox">
+          <h2>Create a Room</h2>
+          <form onSubmit={handleCreateRoom}>
+            <label htmlFor="createRoom" hidden>
+              Room Code:
+            </label>
+            <input
+              type="text"
+              id="createRoom"
+              name="createRoom"
+              placeholder="Enter room code (Optional)"
+              autoComplete="off"
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value)}
+            />
+            <button type="submit">Create Room</button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

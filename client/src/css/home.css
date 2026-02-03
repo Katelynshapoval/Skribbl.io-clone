@@ -1,0 +1,61 @@
+.homePage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3rem;
+  height: 80vh;
+}
+
+.usernameInputBox {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  gap: 5px;
+}
+
+.usernameInputBox input {
+  max-width: 190px;
+  padding: 0.875rem;
+  font-size: 1rem;
+  border: 1.5px solid #15173d;
+  border-radius: 0.5rem;
+  box-shadow: 2.5px 3px 0 #15173d;
+  outline: none;
+  transition: ease 0.25s;
+}
+
+.usernameInputBox input:focus {
+  box-shadow: 5.5px 7px 0 #15173d;
+}
+
+.rooms {
+  display: flex;
+  align-items: center;
+  gap: 5rem;
+}
+
+.rooms p {
+  line-height: 100%;
+}
+
+.joinRoomBox {
+  text-align: center;
+  height: 100%;
+}
+
+.joinRoomBox form,
+.createRoomBox form {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.createRoomBox {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  height: 100%;
+}
