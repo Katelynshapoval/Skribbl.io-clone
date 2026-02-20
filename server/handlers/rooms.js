@@ -60,15 +60,14 @@ function handleJoinRoom(socket) {
 }
 
 function handleCreateRoom(socket) {
-  socket.on("createRoom", ({ username }) => {
-    // Generate a simple room code (in a real app, ensure uniqueness)
-    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  socket.on("createRoom", ({ username, roomCodeUser }) => {
+    if (!username) return;
 
-    // User info
-    socket.username = username;
-    socket.roomCode = roomCode;
+    let roomCode = roomCodeUser || undefined;
+    while (!roomCode || activeRooms.has(roomCode)) {
+      roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
 
-    // Create the room and add the creator as the first player
     const room = {
       word: null,
       round: 1,
@@ -77,15 +76,18 @@ function handleCreateRoom(socket) {
     };
     activeRooms.set(roomCode, room);
 
+    // Attach socket info
+    socket.username = username;
+    socket.roomCode = roomCode;
     socket.join(roomCode);
 
-    // Send roomCreated to the creator
+    // Emit roomCreated (for frontend to navigate)
     socket.emit("roomCreated", {
       roomCode,
       users: Array.from(room.players.values()),
     });
 
-    // Also send roomJoined so the same handler can process it
+    // ✅ Emit roomJoined once, so Room component updates users
     socket.emit("roomJoined", {
       roomCode,
       users: Array.from(room.players.values()),
@@ -170,8 +172,15 @@ function handleReadyStatus(socket, io) {
     });
 
     console.log(
-      `All users in room ${socket.roomCode} are ready. Starting the game with ${starter.username}.`
+      `All users in room ${socket.roomCode} are ready. Starting the game with ${starter.username}.`,
     );
+  });
+}
+
+function handleValidateRoom(socket) {
+  socket.on("checkRoom", (room, callback) => {
+    let exists = activeRooms.has(room);
+    callback(!exists);
   });
 }
 
@@ -181,6 +190,7 @@ module.exports = {
   handleCreateRoom,
   handleLeaveRoom,
   handleReadyStatus,
+  handleValidateRoom,
 };
 
 // To rotate

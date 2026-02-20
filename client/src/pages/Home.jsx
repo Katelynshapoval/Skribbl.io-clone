@@ -5,20 +5,25 @@ import "../css/home.css";
 import Error from "../components/Error";
 
 function Home() {
+  // Input states
   const [username, setUsername] = useState("");
-  const [roomCode, setRoomCode] = useState("");
+  const [roomCodeEnter, setRoomCodeEnter] = useState("");
+  const [roomCodeCreate, setRoomCodeCreate] = useState("");
+  // Error states
   const [error, setError] = useState(null);
   const [showError, setShowError] = useState(false);
-
+  // Variables for logic
   const navigate = useNavigate();
   const socket = useSocket();
 
+  // State for room joining
   useEffect(() => {
     if (!socket) return;
+
     // Join room if user is returning
-    const handleRoomJoined = ({ roomCode, users }) => {
-      navigate(`/room/${roomCode}`, {
-        state: { username, users, roomCode },
+    const handleRoomJoined = ({ roomCodeEnter, users }) => {
+      navigate(`/room/${roomCodeEnter}`, {
+        state: { username, users, roomCodeEnter },
       });
     };
 
@@ -37,8 +42,11 @@ function Home() {
     };
   }, [socket, navigate, username]);
 
+  // When user clicks on "Join room"
   const handleJoinRoom = (e) => {
     e.preventDefault();
+
+    // If no username was introduced
     if (!username.trim()) {
       triggerError("Please enter a username before joining a room.");
       return;
@@ -46,21 +54,23 @@ function Home() {
 
     setError("");
 
-    if (roomCode.trim() && socket) {
+    if (roomCodeEnter.trim() && socket) {
       // Join the room
-      socket.emit("joinRoom", { roomCode, username });
+      socket.emit("joinRoom", { roomCodeEnter, username });
       // Save to session storage for refresh persistence
       sessionStorage.setItem("username", username);
-      sessionStorage.setItem("roomCode", roomCode);
+      sessionStorage.setItem("roomCodeEnter", roomCodeEnter);
       // Clear the form
-      setRoomCode("");
+      setRoomCodeEnter("");
     }
   };
 
+  // Display the error pop-up
   const triggerError = (message) => {
     setError(message);
     setShowError(true);
 
+    // Remove the error when the time runs out
     setTimeout(() => {
       setShowError(false);
     }, 3000);
@@ -77,21 +87,45 @@ function Home() {
 
     setError("");
 
-    // If username is provided
-    if (username.trim() && socket) {
-      socket.emit("createRoom", { username });
+    if (!socket) return;
 
-      // Save to session storage for refresh persistence
-      socket.once("roomCreated", ({ roomCode, users }) => {
-        sessionStorage.setItem("username", username);
-        sessionStorage.setItem("roomCode", roomCode);
-        navigate(`/room/${roomCode}`, { state: { username, users, roomCode } });
+    const cleanedCode = roomCodeCreate.trim().toUpperCase() || "";
+
+    const emitCreate = (code) => {
+      socket.emit("createRoom", {
+        username,
+        roomCodeUser: code,
       });
+    };
+
+    if (cleanedCode) {
+      // Validate the custom code first
+      socket.emit("checkRoom", cleanedCode, (isValid) => {
+        if (!isValid) {
+          triggerError("The room code is not unique.");
+          return;
+        }
+        emitCreate(cleanedCode);
+      });
+    } else {
+      // Let the server generate a code
+      emitCreate("");
     }
+
+    // Listen for roomCreated once and use the server-provided code
+    socket.once("roomCreated", ({ roomCode, users }) => {
+      sessionStorage.setItem("username", username);
+      sessionStorage.setItem("roomCodeEnter", roomCode);
+
+      navigate(`/room/${roomCode}`, {
+        state: { username, users, roomCodeEnter: roomCode },
+      });
+    });
   };
 
   return (
     <div className="homePage">
+      {/* Error pop-up */}
       <Error
         className={`errorToast ${showError ? "show" : ""}`}
         message={error}
@@ -113,17 +147,19 @@ function Home() {
         <div className="joinRoomBox">
           <h2>Join a Room</h2>
           <form onSubmit={handleJoinRoom}>
-            <label htmlFor="roomCode" hidden>
+            <label htmlFor="roomCodeEnter" hidden>
               Room Code:
             </label>
             <input
               type="text"
-              id="roomCode"
-              name="roomCode"
+              id="roomCodeEnter"
+              name="roomCodeEnter"
               placeholder="Enter room code"
               autoComplete="off"
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value)}
+              value={roomCodeEnter}
+              minLength={6}
+              maxLength={6}
+              onChange={(e) => setRoomCodeEnter(e.target.value)}
               required
             />
             <button type="submit">Join Game</button>
@@ -144,8 +180,10 @@ function Home() {
               name="createRoom"
               placeholder="Enter room code (Optional)"
               autoComplete="off"
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value)}
+              minLength={6}
+              maxLength={6}
+              value={roomCodeCreate}
+              onChange={(e) => setRoomCodeCreate(e.target.value)}
             />
             <button type="submit">Create Room</button>
           </form>
