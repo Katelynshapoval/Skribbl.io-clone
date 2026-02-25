@@ -21,11 +21,11 @@ function Home() {
     if (!socket) return;
 
     // Join room if user is returning
-    const handleRoomJoined = ({ roomCodeEnter, users }) => {
-      navigate(`/room/${roomCodeEnter}`, {
-        state: { username, users, roomCodeEnter },
-      });
-    };
+    // const handleRoomJoined = ({ roomCode, users }) => {
+    //   navigate(`/room/${roomCode}`, {
+    //     state: { username, users, roomCode },
+    //   });
+    // };
 
     // Handle errors
     const handleError = (message) => {
@@ -33,11 +33,11 @@ function Home() {
       setTimeout(() => setError(null), 5000);
     };
 
-    socket.on("roomJoined", handleRoomJoined);
+    // socket.on("roomJoined", handleRoomJoined);
     socket.on("error", handleError);
 
     return () => {
-      socket.off("roomJoined", handleRoomJoined);
+      // socket.off("roomJoined", handleRoomJoined);
       socket.off("error", handleError);
     };
   }, [socket, navigate, username]);
@@ -55,13 +55,27 @@ function Home() {
     setError("");
 
     if (roomCodeEnter.trim() && socket) {
-      // Join the room
-      socket.emit("joinRoom", { roomCodeEnter, username });
-      // Save to session storage for refresh persistence
-      sessionStorage.setItem("username", username);
-      sessionStorage.setItem("roomCodeEnter", roomCodeEnter);
-      // Clear the form
-      setRoomCodeEnter("");
+      const cleanedCode = roomCodeEnter.trim().toUpperCase() || "";
+      console.log(cleanedCode);
+      // Check if room exists
+      socket.emit("roomExists", cleanedCode, (roomExists) => {
+        if (!roomExists) {
+          triggerError("The room code is doesn't exist.");
+          return;
+        }
+        // Join the room
+        socket.emit("joinRoom", {
+          roomCode: roomCodeEnter,
+          username: username,
+        });
+        console.log("room", roomCodeEnter);
+        // Save to session storage for refresh persistence
+        sessionStorage.setItem("username", username);
+        sessionStorage.setItem("roomCode", roomCodeEnter);
+        // Clear the form
+        setRoomCodeEnter("");
+        navigate(`/room/${cleanedCode}`);
+      });
     }
   };
 
@@ -100,8 +114,8 @@ function Home() {
 
     if (cleanedCode) {
       // Validate the custom code first
-      socket.emit("checkRoom", cleanedCode, (isValid) => {
-        if (!isValid) {
+      socket.emit("roomExists", cleanedCode, (roomExists) => {
+        if (roomExists) {
           triggerError("The room code is not unique.");
           return;
         }

@@ -12,6 +12,7 @@ const activeRooms = new Map();
 
 function handleJoinRoom(socket) {
   socket.on("joinRoom", ({ roomCode, username }) => {
+    console.log("here", roomCode, username);
     // Basic validation
     if (!roomCode || !username) return;
 
@@ -19,17 +20,8 @@ function handleJoinRoom(socket) {
     socket.username = username;
     socket.roomCode = roomCode;
 
-    // Create the room if it doesn't exist
+    // Get room number
     let room = activeRooms.get(roomCode);
-    if (!room) {
-      room = {
-        word: null,
-        round: 1,
-        currentDrawer: null,
-        players: new Map(),
-      };
-      activeRooms.set(roomCode, room);
-    }
 
     // Check if user is already in the room (to handle refreshes/reconnections)
     const isAlreadyInRoom = room.players.has(username);
@@ -87,11 +79,11 @@ function handleCreateRoom(socket) {
       users: Array.from(room.players.values()),
     });
 
-    // ✅ Emit roomJoined once, so Room component updates users
-    socket.emit("roomJoined", {
-      roomCode,
-      users: Array.from(room.players.values()),
-    });
+    // Emit roomJoined once, so Room component updates users
+    // socket.emit("roomJoined", {
+    //   roomCode,
+    //   users: Array.from(room.players.values()),
+    // });
 
     console.log(`${username} created room: ${roomCode}`);
   });
@@ -178,9 +170,10 @@ function handleReadyStatus(socket, io) {
 }
 
 function handleValidateRoom(socket) {
-  socket.on("checkRoom", (room, callback) => {
+  socket.on("roomExists", (room, callback) => {
     let exists = activeRooms.has(room);
-    callback(!exists);
+    console.log(activeRooms, room, "huh");
+    callback(exists);
   });
 }
 
@@ -192,9 +185,3 @@ module.exports = {
   handleReadyStatus,
   handleValidateRoom,
 };
-
-// To rotate
-// const playerKeys = Array.from(room.players.keys());
-// let idx = playerKeys.indexOf(room.currentDrawer);
-// idx = (idx + 1) % playerKeys.length; // next player in circle
-// room.currentDrawer = playerKeys[idx];

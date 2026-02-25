@@ -56,6 +56,7 @@ function Room() {
     // If we have username and roomCode, emit joinRoom to get current state
     if (username && roomCode) {
       socket.emit("joinRoom", { roomCode, username });
+      console.log("lox", username, roomCode);
     }
 
     // Socket event listeners
@@ -84,8 +85,8 @@ function Room() {
     const handleReadyStatus = ({ username, ready }) => {
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
-          user.username === username ? { ...user, status: ready } : user
-        )
+          user.username === username ? { ...user, status: ready } : user,
+        ),
       );
     };
 
@@ -117,7 +118,7 @@ function Room() {
 
     const handleUserGuessedCorrectly = ({ username, word }) => {
       addMessage(
-        `${username} guessed the word correctly! The word was: ${word}`
+        `${username} guessed the word correctly! The word was: ${word}`,
       );
       setWordGuessVisible(false);
       setUserToPaint(null);

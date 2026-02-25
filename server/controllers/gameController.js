@@ -14,8 +14,6 @@ const {
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
-    console.log("hi");
-
     // Handle joining, creating, and leaving rooms
     handleJoinRoom(socket);
     handleCreateRoom(socket);
