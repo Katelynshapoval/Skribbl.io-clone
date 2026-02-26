@@ -10,44 +10,7 @@ h2 {
 
 body {
   background-color: #f1e9e9;
-}
-
-form input {
-  border: 2px solid transparent;
-  width: 15em;
-  height: 2.5em;
-  padding-left: 0.8em;
-  outline: none;
-  overflow: hidden;
-  background-color: #f3f3f3;
-  border-radius: 10px;
-  transition: all 0.5s;
-}
-
-form input:hover,
-form input:focus {
-  border: 2px solid #e491c9;
-  box-shadow: 0px 0px 0px 3px rgba(152, 37, 152, 20%);
-  background-color: white;
-}
-
-form button {
-  border: none;
-  outline: none;
-  cursor: pointer;
-  background-color: #15173d;
-  padding: 10px 20px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
-  border-radius: 5px;
-  transition: all ease 0.1s;
-  box-shadow: 0px 5px 0px 0px #e491c9;
-}
-
-form button:active {
-  transform: translateY(5px);
-  box-shadow: 0px 0px 0px 0px #a29bfe;
+  font-family: "Inter", sans-serif;
 }
 
 .errorToast {
@@ -84,4 +47,8 @@ form button:active {
 p {
   margin: 0;
   padding: 0;
+}
+
+.icon {
+  font-size: 1rem;
 }

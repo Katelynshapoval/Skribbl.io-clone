@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSocket } from "../context/SocketContext";
+import "../css/components/chat.css";
+import { FiSend } from "react-icons/fi";
 
 function Chat({ username }) {
   const [messages, setMessages] = useState([]);
   const [currentMessage, setCurrentMessage] = useState("");
   const socket = useSocket();
+  const messagesEndRef = useRef(null);
+
+  // Scroll to latest
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
     if (!socket) return;
@@ -35,19 +43,20 @@ function Chat({ username }) {
   };
 
   return (
-    <div>
-      <h2>Chat</h2>
+    <div className="chatContainer">
+      <h2 className="roomSubheading">Chat</h2>
       <div className="chat-window">
         <div className="messages">
           {messages.length > 0 ? (
             messages.map((msg, index) => (
               <div key={index} className="message">
-                <strong>{msg.username}:</strong> {msg.text}
+                <span className="userNameChat">{msg.username}</span>: {msg.text}
               </div>
             ))
           ) : (
             <div className="no-messages">No messages yet</div>
           )}
+          <div ref={messagesEndRef} />
         </div>
         <form className="chat-form" onSubmit={handleSubmit}>
           <input
@@ -56,7 +65,9 @@ function Chat({ username }) {
             value={currentMessage}
             onChange={(e) => setCurrentMessage(e.target.value)}
           />
-          <button type="submit">Send</button>
+          <button type="submit">
+            <FiSend className="icon" />
+          </button>
         </form>
       </div>
     </div>

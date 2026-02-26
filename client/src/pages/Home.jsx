@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "../context/SocketContext";
-import "../css/home.css";
+import "../css/pages/home.css";
 import Error from "../components/Error";
 
 function Home() {

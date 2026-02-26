@@ -4,6 +4,7 @@ import Chat from "../components/Chat";
 import DrawingBoard from "../components/DrawingBoard";
 import { useSocket } from "../context/SocketContext";
 import { useNavigate } from "react-router-dom";
+import "../css/pages/room.css";
 
 function Room() {
   // Hooks
@@ -201,7 +202,7 @@ function Room() {
   };
 
   return (
-    <div>
+    <div className="roomContainer">
       <h1>Welcome to the Room, {username}!</h1>
       <p>Room Code: {roomCode || "Not provided"}</p>
       <p>
@@ -209,95 +210,101 @@ function Room() {
         {userToPaint ? <strong>{userToPaint}</strong> : "Waiting for drawer..."}
       </p>
 
-      <div className="notifications">
-        {messages.map((msg) => (
-          <div key={msg.id} className="notification">
-            {msg.text}
+      <div className="main">
+        <div className="col1">
+          <div className="notifications">
+            {messages.map((msg) => (
+              <div key={msg.id} className="notification">
+                {msg.text}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      {wordInputVisible && userToPaint === username && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            submitWord();
-          }}
-        >
-          <h3>You are the drawer! Please submit a word to draw:</h3>
-          <input
-            type="text"
-            placeholder="Enter a word"
-            value={submittedWord}
-            onChange={(e) => setSubmittedWord(e.target.value)}
+          {wordInputVisible && userToPaint === username && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitWord();
+              }}
+            >
+              <h3>You are the drawer! Please submit a word to draw:</h3>
+              <input
+                type="text"
+                placeholder="Enter a word"
+                value={submittedWord}
+                onChange={(e) => setSubmittedWord(e.target.value)}
+              />
+              <button type="submit">Submit</button>
+            </form>
+          )}
+          {wordGuessVisible && userToPaint !== username && (
+            <div className="wordGuess">
+              <h3>Guess the word being drawn by {userToPaint}!</h3>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  submitGuess();
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Enter your guess here"
+                  value={submittedGuess}
+                  onChange={(e) => setSubmittedGuess(e.target.value)}
+                />
+                <button type="submit">Submit Guess</button>
+              </form>
+            </div>
+          )}
+          <DrawingBoard
+            ref={boardRef}
+            username={username}
+            userToPaint={userToPaint}
           />
-          <button type="submit">Submit</button>
-        </form>
-      )}
-      {wordGuessVisible && userToPaint !== username && (
-        <div className="wordGuess">
-          <h3>Guess the word being drawn by {userToPaint}!</h3>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              submitGuess();
-            }}
-          >
-            <input
-              type="text"
-              placeholder="Enter your guess here"
-              value={submittedGuess}
-              onChange={(e) => setSubmittedGuess(e.target.value)}
-            />
-            <button type="submit">Submit Guess</button>
-          </form>
-        </div>
-      )}
-
-      <div className="roomInfo">
-        <h2>Room Information</h2>
-        <p>Room Code: {roomCode}</p>
-        <p>Username: {username}</p>
-        <p>Users:</p>
-        <ul>
-          {users.map((user, index) => (
-            <li key={index}>
-              {user.username} {user.username === username && "(You)"} -{" "}
-              {user.status ? "Ready" : "Not Ready"}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <Chat username={username} />
-      <DrawingBoard
-        ref={boardRef}
-        username={username}
-        userToPaint={userToPaint}
-      />
-      <div>
-        {!ready ? (
           <button
             onClick={() => {
-              setReady(true);
-              sendReadyStatus(true);
+              if (!socket) return;
+              socket.emit("leaveRoom", { roomCode, username }, () => {
+                sessionStorage.removeItem("username");
+                sessionStorage.removeItem("roomCode");
+                navigate("/"); // client-side navigation
+              });
             }}
           >
-            Ready
+            Leave Room
           </button>
-        ) : (
-          ""
-        )}
-        <button
-          onClick={() => {
-            if (!socket) return;
-            socket.emit("leaveRoom", { roomCode, username }, () => {
-              sessionStorage.removeItem("username");
-              sessionStorage.removeItem("roomCode");
-              navigate("/"); // client-side navigation
-            });
-          }}
-        >
-          Leave Room
-        </button>
+        </div>
+        <div className="col2">
+          <div className="roomInfo">
+            <h2 className="roomSubheading">Room Information</h2>
+            <p>Room Code: {roomCode}</p>
+            <p>Username: {username}</p>
+            <p>Users:</p>
+            <ul>
+              {users.map((user, index) => (
+                <li key={index}>
+                  {user.username} {user.username === username && "(You)"} -{" "}
+                  {user.status ? "Ready" : "Not Ready"}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <Chat username={username} />
+
+          <div>
+            {!ready ? (
+              <button
+                onClick={() => {
+                  setReady(true);
+                  sendReadyStatus(true);
+                }}
+              >
+                Ready
+              </button>
+            ) : (
+              ""
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
