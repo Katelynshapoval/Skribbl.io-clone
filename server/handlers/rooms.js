@@ -10,6 +10,7 @@
 // }
 const activeRooms = new Map();
 
+// Joining
 function handleJoinRoom(socket) {
   socket.on("joinRoom", ({ roomCode, username }) => {
     console.log("here", roomCode, username);
@@ -24,10 +25,16 @@ function handleJoinRoom(socket) {
     let room = activeRooms.get(roomCode);
 
     // Check if user is already in the room (to handle refreshes/reconnections)
-    const isAlreadyInRoom = room.players.has(username);
+    const isAlreadyInRoom = room.players.has(socket.id);
 
     // Add this user to the room (or update if already exists)
-    room.players.set(username, { username, status: false });
+    room.players.set(socket.id, { username, status: false });
+
+    if (room.players.has(socket.id)) {
+      return socket.emit("errorMessage", {
+        message: "Username already taken.",
+      });
+    }
 
     // Join the socket.io room
     socket.join(roomCode);
@@ -51,6 +58,7 @@ function handleJoinRoom(socket) {
   });
 }
 
+// Creating
 function handleCreateRoom(socket) {
   socket.on("createRoom", ({ username, roomCodeUser }) => {
     if (!username) return;
@@ -64,7 +72,7 @@ function handleCreateRoom(socket) {
       word: null,
       round: 1,
       currentDrawer: null,
-      players: new Map([[username, { username, status: false }]]),
+      players: new Map([[socket.id, { username, status: false }]]),
     };
     activeRooms.set(roomCode, room);
 
@@ -89,6 +97,7 @@ function handleCreateRoom(socket) {
   });
 }
 
+// Leaving
 function handleLeaveRoom(socket, io) {
   socket.on("leaveRoom", ({ username, roomCode }, callback) => {
     if (!roomCode || !username) return;
@@ -126,6 +135,7 @@ function removeUserFromRoom(roomCode, username, socket, io) {
   });
 }
 
+// Ready
 function handleReadyStatus(socket, io) {
   socket.on("sendReadyStatus", ({ username, ready }) => {
     console.log(`Received ready status from ${username}: ${ready}`);
@@ -134,7 +144,7 @@ function handleReadyStatus(socket, io) {
     if (!room) return;
 
     // Update the player's ready status
-    const player = room.players.get(username);
+    const player = room.players.get(socket.id);
     if (player) {
       player.status = ready;
     }
@@ -169,6 +179,7 @@ function handleReadyStatus(socket, io) {
   });
 }
 
+// Validate
 function handleValidateRoom(socket) {
   socket.on("roomExists", (room, callback) => {
     let exists = activeRooms.has(room);

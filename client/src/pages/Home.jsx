@@ -15,32 +15,25 @@ function Home() {
   // Variables for logic
   const navigate = useNavigate();
   const socket = useSocket();
+  // Helpers
+  const cleanCode = (code) => code.trim().toUpperCase();
+  const persistSession = (username, roomCode) => {
+    sessionStorage.setItem("username", username);
+    sessionStorage.setItem("roomCode", roomCode);
+  };
 
-  // State for room joining
+  // Errors from the server
   useEffect(() => {
     if (!socket) return;
 
-    // Join room if user is returning
-    // const handleRoomJoined = ({ roomCode, users }) => {
-    //   navigate(`/room/${roomCode}`, {
-    //     state: { username, users, roomCode },
-    //   });
-    // };
-
-    // Handle errors
-    const handleError = (message) => {
-      setError(message);
-      setTimeout(() => setError(null), 5000);
+    const handleErrorMessage = ({ message }) => {
+      triggerError(message);
     };
-
-    // socket.on("roomJoined", handleRoomJoined);
-    socket.on("error", handleError);
-
+    socket.on("errorMessage", handleErrorMessage);
     return () => {
-      // socket.off("roomJoined", handleRoomJoined);
-      socket.off("error", handleError);
+      socket.off("errorMessage", handleErrorMessage);
     };
-  }, [socket, navigate, username]);
+  }, [socket]);
 
   // When user clicks on "Join room"
   const handleJoinRoom = (e) => {
@@ -52,29 +45,30 @@ function Home() {
       return;
     }
 
-    setError("");
-
+    // If there's roomCode and socket
     if (roomCodeEnter.trim() && socket) {
-      const cleanedCode = roomCodeEnter.trim().toUpperCase() || "";
-      console.log(cleanedCode);
+      // Remove the spaces and convert to correct format
+      const cleanedCode = cleanCode(roomCodeEnter);
       // Check if room exists
       socket.emit("roomExists", cleanedCode, (roomExists) => {
+        // Callback. No room - no access
         if (!roomExists) {
-          triggerError("The room code is doesn't exist.");
-          return;
+          return triggerError("The room code is doesn't exist.");
         }
         // Join the room
         socket.emit("joinRoom", {
           roomCode: roomCodeEnter,
           username: username,
         });
-        console.log("room", roomCodeEnter);
         // Save to session storage for refresh persistence
-        sessionStorage.setItem("username", username);
-        sessionStorage.setItem("roomCode", roomCodeEnter);
+        persistSession(username, roomCodeEnter);
         // Clear the form
         setRoomCodeEnter("");
-        navigate(`/room/${cleanedCode}`);
+        // Move to the room
+        // navigate(`/room/${cleanedCode}`);
+        socket.once("roomJoined", ({ roomCode }) => {
+          navigate(`/room/${roomCode}`);
+        });
       });
     }
   };
@@ -103,7 +97,8 @@ function Home() {
 
     if (!socket) return;
 
-    const cleanedCode = roomCodeCreate.trim().toUpperCase() || "";
+    // Remove the spaces and convert to correct format
+    const cleanedCode = cleanCode(roomCodeCreate);
 
     const emitCreate = (code) => {
       socket.emit("createRoom", {
@@ -116,8 +111,7 @@ function Home() {
       // Validate the custom code first
       socket.emit("roomExists", cleanedCode, (roomExists) => {
         if (roomExists) {
-          triggerError("The room code is not unique.");
-          return;
+          return triggerError("The room code is not unique.");
         }
         emitCreate(cleanedCode);
       });
@@ -128,8 +122,7 @@ function Home() {
 
     // Listen for roomCreated once and use the server-provided code
     socket.once("roomCreated", ({ roomCode, users }) => {
-      sessionStorage.setItem("username", username);
-      sessionStorage.setItem("roomCodeEnter", roomCode);
+      persistSession(username, roomCode);
 
       navigate(`/room/${roomCode}`, {
         state: { username, users, roomCodeEnter: roomCode },
@@ -144,6 +137,7 @@ function Home() {
         className={`errorToast ${showError ? "show" : ""}`}
         message={error}
       ></Error>
+      {/* Username box */}
       <div className="usernameInputBox">
         <label htmlFor="username">Username</label>
         <input
@@ -157,7 +151,9 @@ function Home() {
         />
       </div>
 
+      {/* Room forms */}
       <div className="rooms">
+        {/* Joining */}
         <div className="joinRoomBox">
           <h2>Join a Room</h2>
           <form onSubmit={handleJoinRoom}>
@@ -182,6 +178,7 @@ function Home() {
 
         <p>Or</p>
 
+        {/* Creating */}
         <div className="createRoomBox">
           <h2>Create a Room</h2>
           <form onSubmit={handleCreateRoom}>
