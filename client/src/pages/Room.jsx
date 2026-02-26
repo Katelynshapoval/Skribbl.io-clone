@@ -169,6 +169,13 @@ function Room() {
     };
   }, [socket, username, roomCode]); // Added username and roomCode as dependencies
 
+  // Get users on start
+  useEffect(() => {
+    socket.emit("requestUsers", storedRoomCode, (users) => {
+      setUsers(users);
+    });
+  }, [socket, storedRoomCode]);
+
   const sendReadyStatus = (status) => {
     if (!socket) return;
     socket.emit("sendReadyStatus", { username, ready: status });

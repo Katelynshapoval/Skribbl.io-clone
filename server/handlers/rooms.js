@@ -27,14 +27,20 @@ function handleJoinRoom(socket) {
     // Check if user is already in the room (to handle refreshes/reconnections)
     const isAlreadyInRoom = room.players.has(socket.id);
 
-    // Add this user to the room (or update if already exists)
-    room.players.set(socket.id, { username, status: false });
+    // Checker
+    const usernameTaken = [...room.players.values()].some(
+      (player) => player.username === username,
+    );
 
-    if (room.players.has(socket.id)) {
+    // Make sure there're no duplicates
+    if (usernameTaken) {
       return socket.emit("errorMessage", {
         message: "Username already taken.",
       });
     }
+
+    // Add this user to the room (or update if already exists)
+    room.players.set(socket.id, { username, status: false });
 
     // Join the socket.io room
     socket.join(roomCode);
@@ -188,6 +194,19 @@ function handleValidateRoom(socket) {
   });
 }
 
+// Send back users
+function handleRequestUsers(socket) {
+  socket.on("requestUsers", (roomCode, callback) => {
+    const room = activeRooms.get(roomCode);
+
+    if (!room) {
+      return callback([]);
+    }
+
+    callback([...room.players.values()]);
+  });
+}
+
 module.exports = {
   activeRooms,
   handleJoinRoom,
@@ -195,4 +214,5 @@ module.exports = {
   handleLeaveRoom,
   handleReadyStatus,
   handleValidateRoom,
+  handleRequestUsers,
 };

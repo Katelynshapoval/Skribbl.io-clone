@@ -4,6 +4,7 @@ const {
   handleLeaveRoom,
   handleReadyStatus,
   handleValidateRoom,
+  handleRequestUsers,
 } = require("../handlers/rooms");
 
 const {
@@ -20,6 +21,7 @@ module.exports = (io) => {
     handleLeaveRoom(socket, io);
     handleReadyStatus(socket, io);
     handleValidateRoom(socket);
+    handleRequestUsers(socket);
 
     // Game logic handlers
     handleSubmitWord(socket);
