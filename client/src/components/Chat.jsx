@@ -7,11 +7,14 @@ function Chat({ username }) {
   const [messages, setMessages] = useState([]);
   const [currentMessage, setCurrentMessage] = useState("");
   const socket = useSocket();
-  const messagesEndRef = useRef(null);
+  const messagesRef = useRef(null);
 
-  // Scroll to latest
+  /// Scroll to latest
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -43,10 +46,10 @@ function Chat({ username }) {
   };
 
   return (
-    <div className="chatContainer">
+    <div className="chatContainer card">
       <h2 className="roomSubheading">Chat</h2>
       <div className="chat-window">
-        <div className="messages">
+        <div className="messages" ref={messagesRef}>
           {messages.length > 0 ? (
             messages.map((msg, index) => (
               <div key={index} className="message">
@@ -56,7 +59,7 @@ function Chat({ username }) {
           ) : (
             <div className="no-messages">No messages yet</div>
           )}
-          <div ref={messagesEndRef} />
+          <div />
         </div>
         <form className="chat-form" onSubmit={handleSubmit}>
           <input

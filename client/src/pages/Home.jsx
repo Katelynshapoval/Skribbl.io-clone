@@ -172,7 +172,9 @@ function Home() {
               onChange={(e) => setRoomCodeEnter(e.target.value)}
               required
             />
-            <button type="submit">Join Game</button>
+            <button className="fancyButton" type="submit">
+              Join Game
+            </button>
           </form>
         </div>
 
@@ -196,7 +198,9 @@ function Home() {
               value={roomCodeCreate}
               onChange={(e) => setRoomCodeCreate(e.target.value)}
             />
-            <button type="submit">Create Room</button>
+            <button className="fancyButton" type="submit">
+              Create Room
+            </button>
           </form>
         </div>
       </div>

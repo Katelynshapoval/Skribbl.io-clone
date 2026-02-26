@@ -4,6 +4,7 @@ import Chat from "../components/Chat";
 import DrawingBoard from "../components/DrawingBoard";
 import { useSocket } from "../context/SocketContext";
 import { useNavigate } from "react-router-dom";
+import RoomInfo from "../components/RoomInfo";
 import "../css/pages/room.css";
 
 function Room() {
@@ -274,36 +275,17 @@ function Room() {
           </button>
         </div>
         <div className="col2">
-          <div className="roomInfo">
-            <h2 className="roomSubheading">Room Information</h2>
-            <p>Room Code: {roomCode}</p>
-            <p>Username: {username}</p>
-            <p>Users:</p>
-            <ul>
-              {users.map((user, index) => (
-                <li key={index}>
-                  {user.username} {user.username === username && "(You)"} -{" "}
-                  {user.status ? "Ready" : "Not Ready"}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <RoomInfo
+            roomCode={roomCode}
+            username={username}
+            users={users}
+            ready={ready}
+            onReady={() => {
+              setReady(true);
+              sendReadyStatus(true);
+            }}
+          />
           <Chat username={username} />
-
-          <div>
-            {!ready ? (
-              <button
-                onClick={() => {
-                  setReady(true);
-                  sendReadyStatus(true);
-                }}
-              >
-                Ready
-              </button>
-            ) : (
-              ""
-            )}
-          </div>
         </div>
       </div>
     </div>

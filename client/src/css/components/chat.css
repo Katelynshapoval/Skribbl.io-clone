@@ -1,14 +1,5 @@
 .chatContainer {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-
-  height: 20rem;
-  padding: 1.5rem;
-  border-radius: 15px;
-
-  background-color: #fafafa;
-  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+  height: 22rem;
 }
 
 .chat-window {
@@ -16,16 +7,18 @@
   flex-direction: column;
   justify-content: space-between;
   flex: 1;
+  min-height: 0;
 }
 
 .userNameChat {
   color: #d51796;
-  font-weight: 600;
 }
 
 .messages {
   max-height: 11rem;
-  max-width: 20rem;
+  min-height: 0;
+
+  color: #333;
 
   overflow-y: auto;
   scroll-behavior: smooth;
@@ -82,7 +75,7 @@
   cursor: pointer;
   outline: none;
 
-  background-color: #15173d;
+  background-color: black;
   color: #ffffff;
 
   font-size: 12px;
