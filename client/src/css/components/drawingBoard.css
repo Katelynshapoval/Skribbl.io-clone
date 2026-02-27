@@ -1,0 +1,22 @@
+.boardInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.boardInfo h2 {
+  margin-bottom: 0;
+}
+
+.boardInfo p {
+  color: rgb(85, 85, 86);
+}
+
+.drawing-board canvas {
+  width: 100%;
+  height: 25rem;
+  background-color: #fafafa;
+  border: 2px solid rgb(226, 224, 224);
+  border-radius: 20px;
+}

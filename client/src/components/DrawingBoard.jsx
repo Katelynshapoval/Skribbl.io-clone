@@ -6,10 +6,11 @@ import React, {
   useImperativeHandle,
 } from "react";
 import { useSocket } from "../context/SocketContext";
+import "../css/components/drawingBoard.css";
 
 const DrawingBoard = forwardRef(function DrawingBoard(
   { username, userToPaint },
-  ref
+  ref,
 ) {
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
@@ -33,11 +34,26 @@ const DrawingBoard = forwardRef(function DrawingBoard(
   // Initialize canvas once on mount
   useEffect(() => {
     const canvas = canvasRef.current;
-    canvas.width = 400;
-    canvas.height = 400;
+    if (!canvas) return;
+
+    // Change dimensions
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
     const ctx = canvas.getContext("2d");
     ctx.lineCap = "round";
     ctxRef.current = ctx;
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+
+    canvas.width = rect.width;
+    canvas.height = rect.height;
   }, []);
 
   // Listen for drawing data from server and draw it
@@ -57,7 +73,8 @@ const DrawingBoard = forwardRef(function DrawingBoard(
         if (!ctx) return;
 
         if (type === "clear") {
-          ctx.clearRect(0, 0, 400, 400);
+          const canvas = canvasRef.current;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
         } else if (type === "eraseStart") {
           ctx.globalCompositeOperation = "destination-out";
           ctx.lineWidth = lineWidth;
@@ -85,7 +102,7 @@ const DrawingBoard = forwardRef(function DrawingBoard(
             ctx.closePath();
           }
         }
-      }
+      },
     );
 
     return () => {
@@ -94,9 +111,12 @@ const DrawingBoard = forwardRef(function DrawingBoard(
   }, [socket]);
 
   const clear = () => {
+    const canvas = canvasRef.current;
     const ctx = ctxRef.current;
-    if (!ctx) return;
-    ctx.clearRect(0, 0, 400, 400);
+    if (!ctx || !canvas) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     emitDrawing(null, null, "clear");
   };
 
@@ -167,11 +187,14 @@ const DrawingBoard = forwardRef(function DrawingBoard(
   };
 
   return (
-    <div className="drawing-board">
+    <div className="drawing-board card">
+      <div className="boardInfo">
+        <h2 className="roomSubheading">Drawing Board</h2>
+        <p>{isAllowedToDraw ? "Spectating" : "Guessing mode"}</p>
+      </div>
       <canvas
         ref={canvasRef}
         style={{
-          border: "1px solid black",
           cursor: isAllowedToDraw ? "crosshair" : "not-allowed",
         }}
         onMouseDown={isAllowedToDraw ? startDrawing : undefined}
