@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { useSocket } from "../context/SocketContext";
 import "../css/components/drawingBoard.css";
+import { CiEraser } from "react-icons/ci";
 
 const DrawingBoard = forwardRef(function DrawingBoard(
   { username, userToPaint },
@@ -201,23 +202,36 @@ const DrawingBoard = forwardRef(function DrawingBoard(
         onMouseMove={isAllowedToDraw ? draw : undefined}
         onMouseUp={isAllowedToDraw ? stopDrawing : undefined}
       />
-      <div>
+      <div className="controllers">
         <input
           type="color"
           value={color}
+          id="colorPicker"
           onChange={(e) => setColor(e.target.value)}
         />
-        <button disabled={!isAllowedToDraw} onClick={() => clear()}>
+        <button
+          id="clearButton"
+          disabled={!isAllowedToDraw}
+          onClick={() => clear()}
+        >
           Clear
         </button>
         <button
+          id="eraseButton"
           disabled={!isAllowedToDraw}
           onClick={() => setEraserMode((prev) => !prev)}
         >
-          {eraserMode ? "Switch to Draw" : "Erase"}
+          {eraserMode ? (
+            "Switch to Draw"
+          ) : (
+            <>
+              Erase <CiEraser className="icon" />
+            </>
+          )}
         </button>
         <input
           type="range"
+          id="penSizeSlider"
           min="5"
           max="15"
           value={lineWidth}

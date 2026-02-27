@@ -19,4 +19,50 @@
   background-color: #fafafa;
   border: 2px solid rgb(226, 224, 224);
   border-radius: 20px;
+  margin-bottom: 20px;
+}
+
+.controllers {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.controllers button {
+  padding: 10px;
+  border: 1px solid #a29bfe;
+  border-radius: 10px;
+}
+
+.controllers button:hover {
+  border: 1px solid #575397;
+}
+
+.controllers button:not(:disabled) {
+  cursor: pointer;
+  color: black;
+}
+
+#colorPicker {
+  border-radius: 20px;
+  border: 1px solid rgb(226, 224, 224);
+
+  cursor: pointer;
+}
+
+/* Firefox removes grey border */
+input[type="color"]::-moz-color-swatch {
+  border: none;
+}
+
+#eraseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 9rem;
+}
+
+#penSizeSlider {
+  accent-color: #e491c9;
 }
