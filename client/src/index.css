@@ -11,6 +11,7 @@ h2 {
 body {
   background-color: #f1e9e9;
   font-family: "Inter", sans-serif;
+  padding: 2rem;
 }
 
 .errorToast {

@@ -7,7 +7,6 @@
   flex-direction: column;
   justify-content: space-between;
   flex: 1;
-  min-height: 0;
 }
 
 .userNameChat {
@@ -16,7 +15,6 @@
 
 .messages {
   max-height: 11rem;
-  min-height: 0;
 
   color: #333;
 

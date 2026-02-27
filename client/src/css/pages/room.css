@@ -1,10 +1,31 @@
 .roomContainer {
   display: flex;
-  align-items: center;
   flex-direction: column;
   font-family: sans-serif;
   margin: 0 auto;
   width: 90%;
+}
+
+.intro {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.intro p {
+  color: rgb(55, 55, 56);
+}
+
+.intro span {
+  font-family:
+    "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", "Lucida Sans",
+    Arial, sans-serif;
+}
+
+.intro h1 {
+  font-weight: 100;
 }
 
 .main {

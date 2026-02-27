@@ -204,12 +204,22 @@ function Room() {
 
   return (
     <div className="roomContainer">
-      <h1>Welcome to the Room, {username}!</h1>
-      <p>Room Code: {roomCode || "Not provided"}</p>
-      <p>
-        Drawer:{" "}
-        {userToPaint ? <strong>{userToPaint}</strong> : "Waiting for drawer..."}
-      </p>
+      <div className="intro">
+        <h1>Welcome to the Room, {username}!</h1>
+        <p>
+          Room Code: <span>{roomCode || "Not provided"}</span>
+        </p>
+        <p>
+          Drawer:{" "}
+          <span>
+            {userToPaint ? (
+              <strong>{userToPaint}</strong>
+            ) : (
+              "Waiting for drawer..."
+            )}
+          </span>
+        </p>
+      </div>
 
       <div className="main">
         <div className="col1">
