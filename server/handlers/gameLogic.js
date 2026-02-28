@@ -39,7 +39,6 @@ function handleSubmitGuess(socket, io) {
         word: correctWord,
       });
       setTimeout(() => {
-        console.log("heeeeeey");
         rotateDrawerBackend(roomCode, io);
       }, 3000);
     } else {
@@ -59,20 +58,18 @@ function handleSubmitGuess(socket, io) {
 function rotateDrawerBackend(roomCode, io) {
   const room = activeRooms.get(roomCode);
   if (!room || !room.players || room.players.size === 0) return;
-
   const playersArray = [...room.players.values()];
   const currentDrawer = room.currentDrawer;
 
   const currentIndex = playersArray.findIndex(
-    (p) => p.username === currentDrawer
+    (p) => p.username === currentDrawer,
   );
 
   const nextIndex =
     currentIndex === -1 ? 0 : (currentIndex + 1) % playersArray.length;
 
   room.currentDrawer = playersArray[nextIndex].username;
-
-  console.log("New drawer:", room.currentDrawer);
+  room.word = null;
 
   io.to(roomCode).emit("drawerChanged", {
     newDrawer: room.currentDrawer,

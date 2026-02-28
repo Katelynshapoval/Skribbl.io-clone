@@ -140,7 +140,6 @@ function Room() {
 
     const handleRotateDrawer = ({ newDrawer }) => {
       setUserToPaint(newDrawer);
-      setWordGuessVisible(newDrawer !== username);
       setWordInputVisible(newDrawer === username);
     };
 
@@ -153,6 +152,7 @@ function Room() {
       addMessage(`${username} has submitted a word. Start guessing!`, "medium");
       setUserToPaint(username);
       setWordGuessVisible(true);
+      // setWordGuessVisible(userToPaint !== username);
     };
 
     const handleUserGuessedCorrectly = ({ username, word }) => {
