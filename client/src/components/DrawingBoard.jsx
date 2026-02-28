@@ -232,6 +232,7 @@ const DrawingBoard = forwardRef(function DrawingBoard(
         <input
           type="range"
           id="penSizeSlider"
+          disabled={!isAllowedToDraw}
           min="5"
           max="15"
           value={lineWidth}

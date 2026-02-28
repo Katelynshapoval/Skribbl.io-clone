@@ -51,6 +51,15 @@ function Room() {
     }, 5000);
   };
 
+  const leaveRoom = () => {
+    if (!socket) return;
+    socket.emit("leaveRoom", { roomCode, username }, () => {
+      sessionStorage.removeItem("username");
+      sessionStorage.removeItem("roomCode");
+      navigate("/"); // client-side navigation
+    });
+  };
+
   // Socket event listeners
   useEffect(() => {
     if (!socket) return;
@@ -271,18 +280,6 @@ function Room() {
             username={username}
             userToPaint={userToPaint}
           />
-          <button
-            onClick={() => {
-              if (!socket) return;
-              socket.emit("leaveRoom", { roomCode, username }, () => {
-                sessionStorage.removeItem("username");
-                sessionStorage.removeItem("roomCode");
-                navigate("/"); // client-side navigation
-              });
-            }}
-          >
-            Leave Room
-          </button>
         </div>
         <div className="col2">
           <RoomInfo
@@ -293,6 +290,7 @@ function Room() {
             onReady={() => {
               setReady(true);
               sendReadyStatus(true);
+              leaveRoom = { leaveRoom };
             }}
           />
           <Chat username={username} />

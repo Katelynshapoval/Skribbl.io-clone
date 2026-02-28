@@ -1,6 +1,6 @@
 import "../css/components/roomInfo.css";
 
-function RoomInfo({ roomCode, username, users, ready, onReady }) {
+function RoomInfo({ roomCode, username, users, ready, onReady, leaveRoom }) {
   return (
     <div className="roomInfoContainer card">
       <h2 className="roomSubheading">Room Information</h2>
@@ -41,12 +41,19 @@ function RoomInfo({ roomCode, username, users, ready, onReady }) {
       </div>
 
       {/* Bottom to change status that later disappears */}
-      <div>
+      <div className="roomControlButtons">
         {!ready && (
           <button onClick={onReady} id="readyButton" className="fancyButton">
             I'm ready!
           </button>
         )}
+        <button
+          className="fancyButton"
+          id="leaveButton"
+          onClick={() => leaveRoom()}
+        >
+          Leave Room
+        </button>
       </div>
     </div>
   );

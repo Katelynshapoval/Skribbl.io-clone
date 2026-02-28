@@ -34,7 +34,7 @@
   border-radius: 10px;
 }
 
-.controllers button:hover {
+.controllers button:not(:disabled):hover {
   border: 1px solid #575397;
 }
 
