@@ -118,14 +118,9 @@ function Room() {
 
     const handleReadyStatus = ({ username, ready }) => {
       setUsers((prevUsers) => {
-        const updatedUsers = prevUsers.map((user) =>
+        return prevUsers.map((user) =>
           user.username === username ? { ...user, status: ready } : user,
         );
-
-        // Check number of players after updating
-        checkEnoughPlayers(updatedUsers);
-
-        return updatedUsers;
       });
     };
 
@@ -217,6 +212,12 @@ function Room() {
     });
   }, [socket, storedRoomCode]);
 
+  // useEffect(() => {
+  //   if (users.length > 0) {
+  //     checkEnoughPlayers(users);
+  //   }
+  // }, [users]);
+
   const sendReadyStatus = (status) => {
     if (!socket) return;
     socket.emit("sendReadyStatus", { username, ready: status });
@@ -277,10 +278,10 @@ function Room() {
       <div className="main">
         <div className="col1">
           {/* All the incoming notifications */}
-          <div className="messages card">
+          <div className="notifications card">
             {messages.length > 0 ? (
               messages.map((msg) => (
-                <div key={msg.id} className={`message ${msg.priority}`}>
+                <div key={msg.id} className={`notification ${msg.priority}`}>
                   {priorityIcons[msg.priority]}
                   {msg.text}
                 </div>
@@ -356,6 +357,7 @@ function Room() {
             onReady={() => {
               setReady(true);
               sendReadyStatus(true);
+              checkEnoughPlayers(users);
             }}
           />
           {/* Chat card */}
