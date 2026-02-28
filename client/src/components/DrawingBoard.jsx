@@ -47,16 +47,6 @@ const DrawingBoard = forwardRef(function DrawingBoard(
     ctxRef.current = ctx;
   }, []);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-  }, []);
-
   // Listen for drawing data from server and draw it
   useEffect(() => {
     if (!socket) return;

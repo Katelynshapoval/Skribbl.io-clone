@@ -158,7 +158,7 @@ function Room() {
     const handleUserGuessedCorrectly = ({ username, word }) => {
       addMessage(
         `${username} guessed the word correctly! The word was: ${word}`,
-        "high",
+        "medium",
       );
       setWordGuessVisible(false);
       setUserToPaint(null);
@@ -296,6 +296,7 @@ function Room() {
             {isDrawer || isGuesser ? (
               <>
                 <h3>{heading}</h3>
+                {/* Form depending on whether a user is a guesser or a drawer */}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -319,10 +320,24 @@ function Room() {
                   </button>
                 </form>
               </>
-            ) : (
+            ) : submittedWord == "" && userToPaint == username ? (
+              // For drawer, after they submit a word
               <p className="lightText">
-                Waiting for the round to start. A form will appear when it's
-                your turn or when guessing begins.
+                Your word has been submitted! Now wait for other players to
+                guess it.
+              </p>
+            ) : submittedWord == "" &&
+              userToPaint != username &&
+              userToPaint !== null ? (
+              // For player, while the drawer is thinking about the word
+              <p className="lightText">
+                Waiting for the drawer to submit their word...
+              </p>
+            ) : (
+              // Default
+              <p className="lightText">
+                The round hasn’t started yet. Get ready—your turn or the
+                guessing form will appear soon!
               </p>
             )}
           </div>

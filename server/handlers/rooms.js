@@ -93,12 +93,6 @@ function handleCreateRoom(socket) {
       users: Array.from(room.players.values()),
     });
 
-    // Emit roomJoined once, so Room component updates users
-    // socket.emit("roomJoined", {
-    //   roomCode,
-    //   users: Array.from(room.players.values()),
-    // });
-
     console.log(`${username} created room: ${roomCode}`);
   });
 }
