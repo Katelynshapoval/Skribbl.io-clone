@@ -6,6 +6,9 @@ import { useSocket } from "../context/SocketContext";
 import { useNavigate } from "react-router-dom";
 import RoomInfo from "../components/RoomInfo";
 import "../css/pages/room.css";
+import { IoIosInformationCircleOutline } from "react-icons/io";
+import { AiOutlineExclamationCircle } from "react-icons/ai";
+import { IoIosCheckmarkCircleOutline } from "react-icons/io";
 
 function Room() {
   // Hooks
@@ -35,22 +38,30 @@ function Room() {
   const [submittedWord, setSubmittedWord] = useState("");
   const [submittedGuess, setSubmittedGuess] = useState("");
 
+  // Icons depending on message priority
+  const priorityIcons = {
+    low: <IoIosInformationCircleOutline />,
+    medium: <IoIosCheckmarkCircleOutline />,
+    high: <AiOutlineExclamationCircle />,
+  };
+
   // Helper to add a message with auto-remove
-  const addMessage = (text) => {
+  const addMessage = (text, priority) => {
     const id = Date.now() + Math.random(); // ensure unique id
     setMessages((prev) => {
       // Add the new message to the prev ones
-      const updated = [...prev, { id, text }];
+      const updated = [{ id, text, priority }, ...prev];
 
       // keep only the last 3 messages
-      return updated.slice(-3);
+      return updated.slice(0, 3);
     });
 
     setTimeout(() => {
       setMessages((prev) => prev.filter((msg) => msg.id !== id));
-    }, 5000);
+    }, 4000);
   };
 
+  // Helper to pass to the roominfo component
   const leaveRoom = () => {
     if (!socket) return;
     socket.emit("leaveRoom", { roomCode, username }, () => {
@@ -84,16 +95,17 @@ function Room() {
     const handleUserJoined = ({ message, users }) => {
       console.log("User joined:", message);
       setUsers(users || []); // ensure users is always an array
-      addMessage(message);
+      addMessage(message, "medium");
     };
 
     const handleUserLeft = ({ message, users }) => {
       console.log("User left:", message);
       setUsers(users || []); // ensure users is always an array
-      addMessage(message);
+      addMessage(message, "medium");
     };
 
     const handleReadyStatus = ({ username, ready }) => {
+      addMessage(`${username} is ready to play!`, "low");
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.username === username ? { ...user, status: ready } : user,
@@ -102,7 +114,7 @@ function Room() {
     };
 
     const handleAllReady = ({ message, userToStart }) => {
-      addMessage(message);
+      addMessage(message, "medium");
       setUserToPaint(userToStart);
       if (userToStart === username) {
         setWordInputVisible(true);
@@ -117,12 +129,12 @@ function Room() {
     };
 
     const handleWordAccepted = ({ word }) => {
-      addMessage(`Word accepted: ${word}`);
+      addMessage(`Word accepted: ${word}`, "medium");
       setWordInputVisible(false);
     };
 
     const handleWordSubmitted = ({ username }) => {
-      addMessage(`${username} has submitted a word. Start guessing!`);
+      addMessage(`${username} has submitted a word. Start guessing!`, "high");
       setUserToPaint(username);
       setWordGuessVisible(true);
     };
@@ -130,6 +142,7 @@ function Room() {
     const handleUserGuessedCorrectly = ({ username, word }) => {
       addMessage(
         `${username} guessed the word correctly! The word was: ${word}`,
+        "high",
       );
       setWordGuessVisible(false);
       setUserToPaint(null);
@@ -149,14 +162,21 @@ function Room() {
     socket.on("wordAccepted", handleWordAccepted);
     socket.on("wordSubmitted", handleWordSubmitted);
     socket.on("guessResult", ({ correct }) => {
-      addMessage(correct ? "Correct guess!" : "Incorrect guess. Try again!");
+      if (correct) {
+        addMessage(
+          correct ? "Correct guess!" : "Incorrect guess. Try again!",
+          "medium",
+        );
+      } else {
+        addMessage("Incorrect guess. Try again!", "high");
+      }
     });
 
     socket.on("userGuessedCorrectly", handleUserGuessedCorrectly);
 
     // Drawer sees guesses
     socket.on("newGuess", ({ username, guess }) => {
-      addMessage(`${username} guessed: ${guess}`);
+      addMessage(`${username} guessed: ${guess}`, "low");
     });
 
     // Rotate drawer
@@ -213,6 +233,7 @@ function Room() {
 
   return (
     <div className="roomContainer">
+      {/* Short room description */}
       <div className="intro">
         <h1>Welcome to the Room, {username}!</h1>
         <p>
@@ -232,13 +253,20 @@ function Room() {
 
       <div className="main">
         <div className="col1">
-          <div className="notifications">
-            {messages.map((msg) => (
-              <div key={msg.id} className="notification">
-                {msg.text}
-              </div>
-            ))}
+          {/* All the incoming notifications */}
+          <div className="notifications card">
+            {messages.length > 0 ? (
+              messages.map((msg) => (
+                <div key={msg.id} className={`notification ${msg.priority}`}>
+                  {priorityIcons[msg.priority]}
+                  {msg.text}
+                </div>
+              ))
+            ) : (
+              <p>No notifications yet</p>
+            )}
           </div>
+          {/* Card for the drawer to enter the correct answer */}
           {wordInputVisible && userToPaint === username && (
             <form
               onSubmit={(e) => {
@@ -256,6 +284,7 @@ function Room() {
               <button type="submit">Submit</button>
             </form>
           )}
+          {/* Card for the guessers */}
           {wordGuessVisible && userToPaint !== username && (
             <div className="wordGuess">
               <h3>Guess the word being drawn by {userToPaint}!</h3>
@@ -275,6 +304,7 @@ function Room() {
               </form>
             </div>
           )}
+          {/* Drawing board */}
           <DrawingBoard
             ref={boardRef}
             username={username}
@@ -282,6 +312,7 @@ function Room() {
           />
         </div>
         <div className="col2">
+          {/* All the info about the room */}
           <RoomInfo
             roomCode={roomCode}
             username={username}
@@ -293,6 +324,7 @@ function Room() {
               leaveRoom = { leaveRoom };
             }}
           />
+          {/* Chat card */}
           <Chat username={username} />
         </div>
       </div>
