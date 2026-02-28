@@ -9,12 +9,14 @@ import "../css/pages/room.css";
 import { IoIosInformationCircleOutline } from "react-icons/io";
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
+import { useError } from "../context/ErrorContext";
 
 function Room() {
   // Hooks
   const location = useLocation();
   const socket = useSocket();
   const navigate = useNavigate();
+  const { showError } = useError();
 
   // References
   const boardRef = useRef();
@@ -27,6 +29,7 @@ function Room() {
   const username = storedUsername || location.state?.username || "Guest";
   const roomCode = storedRoomCode || useParams().roomCode;
 
+  // Game
   const [users, setUsers] = useState([]);
   const [userToPaint, setUserToPaint] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -58,7 +61,7 @@ function Room() {
 
     setTimeout(() => {
       setMessages((prev) => prev.filter((msg) => msg.id !== id));
-    }, 4000);
+    }, 5000);
   };
 
   // Helper to pass to the roominfo component
@@ -69,6 +72,15 @@ function Room() {
       sessionStorage.removeItem("roomCode");
       navigate("/"); // client-side navigation
     });
+  };
+
+  // Helper to check if there are more than one player in the room
+  const playersExist = () => {
+    if (users.length == 0) {
+      showError("You need at least two players to start the game!");
+      return false;
+    }
+    return true;
   };
 
   // Socket event listeners
@@ -105,7 +117,6 @@ function Room() {
     };
 
     const handleReadyStatus = ({ username, ready }) => {
-      addMessage(`${username} is ready to play!`, "low");
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.username === username ? { ...user, status: ready } : user,
@@ -115,6 +126,7 @@ function Room() {
 
     const handleAllReady = ({ message, userToStart }) => {
       addMessage(message, "medium");
+      if (playersExist()) return;
       setUserToPaint(userToStart);
       if (userToStart === username) {
         setWordInputVisible(true);
@@ -122,7 +134,7 @@ function Room() {
     };
 
     const handleRotateDrawer = ({ newDrawer }) => {
-      console.log("New Drawer ", newDrawer);
+      if (playersExist()) return;
       setUserToPaint(newDrawer);
       setWordGuessVisible(newDrawer !== username);
       setWordInputVisible(newDrawer === username);

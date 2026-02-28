@@ -2,19 +2,17 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "../context/SocketContext";
 import "../css/pages/home.css";
-import Error from "../components/Error";
+import { useError } from "../context/ErrorContext";
 
 function Home() {
   // Input states
   const [username, setUsername] = useState("");
   const [roomCodeEnter, setRoomCodeEnter] = useState("");
   const [roomCodeCreate, setRoomCodeCreate] = useState("");
-  // Error states
-  const [error, setError] = useState(null);
-  const [showError, setShowError] = useState(false);
-  // Variables for logic
+  // Variables for logic, contexr
   const navigate = useNavigate();
   const socket = useSocket();
+  const { showError } = useError();
   // Helpers
   const cleanCode = (code) => code.trim().toUpperCase();
   const persistSession = (username, roomCode) => {
@@ -27,7 +25,7 @@ function Home() {
     if (!socket) return;
 
     const handleErrorMessage = ({ message }) => {
-      triggerError(message);
+      showError(message);
     };
     socket.on("errorMessage", handleErrorMessage);
     return () => {
@@ -41,7 +39,7 @@ function Home() {
 
     // If no username was introduced
     if (!username.trim()) {
-      triggerError("Please enter a username before joining a room.");
+      showError("Please enter a username before joining a room.");
       return;
     }
 
@@ -73,27 +71,14 @@ function Home() {
     }
   };
 
-  // Display the error pop-up
-  const triggerError = (message) => {
-    setError(message);
-    setShowError(true);
-
-    // Remove the error when the time runs out
-    setTimeout(() => {
-      setShowError(false);
-    }, 3000);
-  };
-
   // Create a new room
   const handleCreateRoom = (e) => {
     e.preventDefault();
 
     if (!username.trim()) {
-      triggerError("Please enter a username before creating a room.");
+      showError("Please enter a username before creating a room.");
       return;
     }
-
-    setError("");
 
     if (!socket) return;
 
@@ -111,7 +96,7 @@ function Home() {
       // Validate the custom code first
       socket.emit("roomExists", cleanedCode, (roomExists) => {
         if (roomExists) {
-          return triggerError("The room code is not unique.");
+          return showError("The room code is not unique.");
         }
         emitCreate(cleanedCode);
       });
@@ -132,11 +117,6 @@ function Home() {
 
   return (
     <div className="homePage">
-      {/* Error pop-up */}
-      <Error
-        className={`errorToast ${showError ? "show" : ""}`}
-        message={error}
-      ></Error>
       {/* Username box */}
       <div className="usernameInputBox">
         <label htmlFor="username">Username</label>
@@ -169,7 +149,7 @@ function Home() {
               value={roomCodeEnter}
               minLength={6}
               maxLength={6}
-              onChange={(e) => setRoomCodeEnter(e.target.value)}
+              onChange={(e) => setRoomCodeEnter(e.target.value.toUpperCase())}
               required
             />
             <button className="fancyButton" type="submit">
@@ -196,7 +176,7 @@ function Home() {
               minLength={6}
               maxLength={6}
               value={roomCodeCreate}
-              onChange={(e) => setRoomCodeCreate(e.target.value)}
+              onChange={(e) => setRoomCodeCreate(e.target.value.toUpperCase())}
             />
             <button className="fancyButton" type="submit">
               Create Room
