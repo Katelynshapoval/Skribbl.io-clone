@@ -9,14 +9,14 @@ import "../css/pages/room.css";
 import { IoIosInformationCircleOutline } from "react-icons/io";
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
-import { useError } from "../context/ErrorContext";
+import { useNotification } from "../context/NotificationsContext";
 
 function Room() {
   // Hooks
   const location = useLocation();
   const socket = useSocket();
   const navigate = useNavigate();
-  const { showError } = useError();
+  const { showNotification } = useNotification();
 
   // References
   const boardRef = useRef();
@@ -77,7 +77,10 @@ function Room() {
   // Helper to check if there are more than one player in the room
   const playersExist = () => {
     if (users.length == 0) {
-      showError("You need at least two players to start the game!");
+      showNotification(
+        "You need at least two players to start the game!",
+        "info",
+      );
       return false;
     }
     return true;
@@ -330,10 +333,10 @@ function Room() {
             username={username}
             users={users}
             ready={ready}
+            leaveRoom={leaveRoom}
             onReady={() => {
               setReady(true);
               sendReadyStatus(true);
-              leaveRoom = { leaveRoom };
             }}
           />
           {/* Chat card */}

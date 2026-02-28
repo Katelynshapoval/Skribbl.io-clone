@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "../context/SocketContext";
 import "../css/pages/home.css";
-import { useError } from "../context/ErrorContext";
+import { useNotification } from "../context/NotificationsContext";
 
 function Home() {
   // Input states
@@ -12,7 +12,7 @@ function Home() {
   // Variables for logic, contexr
   const navigate = useNavigate();
   const socket = useSocket();
-  const { showError } = useError();
+  const { showNotification } = useNotification();
   // Helpers
   const cleanCode = (code) => code.trim().toUpperCase();
   const persistSession = (username, roomCode) => {
@@ -25,7 +25,7 @@ function Home() {
     if (!socket) return;
 
     const handleErrorMessage = ({ message }) => {
-      showError(message);
+      showNotification(message, "error");
     };
     socket.on("errorMessage", handleErrorMessage);
     return () => {
@@ -39,7 +39,10 @@ function Home() {
 
     // If no username was introduced
     if (!username.trim()) {
-      showError("Please enter a username before joining a room.");
+      showNotification(
+        "Please enter a username before joining a room.",
+        "error",
+      );
       return;
     }
 
@@ -76,7 +79,10 @@ function Home() {
     e.preventDefault();
 
     if (!username.trim()) {
-      showError("Please enter a username before creating a room.");
+      showNotification(
+        "Please enter a username before creating a room.",
+        "error",
+      );
       return;
     }
 
@@ -96,7 +102,7 @@ function Home() {
       // Validate the custom code first
       socket.emit("roomExists", cleanedCode, (roomExists) => {
         if (roomExists) {
-          return showError("The room code is not unique.");
+          return showNotification("The room code is not unique.", "error");
         }
         emitCreate(cleanedCode);
       });
