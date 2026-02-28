@@ -64,31 +64,11 @@
 }
 
 .chat-form button {
-  height: 100%;
   padding: 0 12px;
 
-  border: none;
   border-radius: 0 10px 10px 0;
 
-  cursor: pointer;
-  outline: none;
-
-  background-color: black;
-  color: #ffffff;
-
   font-size: 12px;
-  font-weight: 700;
-
-  transition: all 0.3s ease;
-}
-
-.chat-form button:hover {
-  opacity: 0.9;
-}
-
-.chat-form button:active {
-  background-color: #ffffff;
-  color: #000000;
 }
 
 .chat-form button:active .icon {

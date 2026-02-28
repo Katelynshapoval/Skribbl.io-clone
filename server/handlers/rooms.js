@@ -168,8 +168,13 @@ function handleReadyStatus(socket, io) {
       }
     }
 
-    // If all are ready, pick a random starter
     const playersArray = Array.from(room.players.values());
+
+    if (playersArray.length < 2) {
+      return; // stops the game if fewer than 2 players
+    }
+
+    // If all are ready, pick a random starter
     const starter =
       playersArray[Math.floor(Math.random() * playersArray.length)];
     room.currentDrawer = starter.username;

@@ -28,7 +28,7 @@
   font-weight: 100;
 }
 
-.notifications {
+.messages {
   height: 13rem;
   display: flex;
   flex-direction: column;
@@ -41,12 +41,11 @@
   -ms-overflow-style: none; /* IE/Edge */
 }
 
-.notifications p {
+.messages p {
   margin: 0 auto;
-  color: rgb(93, 94, 95);
 }
 
-.notification {
+.message {
   border: 1px solid rgb(226, 224, 224);
   display: flex;
   align-items: center;
@@ -54,6 +53,22 @@
   padding: 12px;
   border-radius: 10px;
   animation: slideDown 0.3s ease-out;
+}
+
+.message.low {
+  background-color: rgba(224, 244, 255, 0.679);
+  color: rgb(53, 118, 183);
+  border: 1px solid rgb(135, 180, 243);
+}
+.message.medium {
+  background-color: rgba(224, 255, 243, 0.679);
+  color: rgb(36, 157, 127);
+  border: 1px solid rgb(85, 219, 152);
+}
+.message.high {
+  background-color: rgba(255, 224, 224, 0.679);
+  color: rgb(183, 53, 70);
+  border: 1px solid rgb(243, 135, 135);
 }
 
 @keyframes slideDown {
@@ -67,20 +82,28 @@
   }
 }
 
-.notification.low {
-  background-color: rgba(224, 244, 255, 0.679);
-  color: rgb(53, 118, 183);
-  border: 1px solid rgb(135, 180, 243);
+.inputCard {
+  height: 10rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
 }
-.notification.medium {
-  background-color: rgba(224, 255, 243, 0.679);
-  color: rgb(36, 157, 127);
-  border: 1px solid rgb(85, 219, 152);
+
+.inputCard h3 {
+  font-weight: 100;
 }
-.notification.high {
-  background-color: rgba(255, 224, 224, 0.679);
-  color: rgb(183, 53, 70);
-  border: 1px solid rgb(243, 135, 135);
+
+.inputCard p {
+  text-align: center;
+}
+
+#gameForm {
+  display: flex;
+  gap: 10px;
+}
+
+#submitWordButton {
+  width: 8rem;
 }
 
 .main {

@@ -191,7 +191,9 @@ const DrawingBoard = forwardRef(function DrawingBoard(
     <div className="drawing-board card">
       <div className="boardInfo">
         <h2 className="roomSubheading">Drawing Board</h2>
-        <p>{isAllowedToDraw ? "Spectating" : "Guessing mode"}</p>
+        <p className="lightText">
+          {isAllowedToDraw ? "Spectating" : "Guessing mode"}
+        </p>
       </div>
       <canvas
         ref={canvasRef}

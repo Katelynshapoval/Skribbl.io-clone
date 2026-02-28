@@ -157,6 +157,7 @@ function Home() {
               maxLength={6}
               onChange={(e) => setRoomCodeEnter(e.target.value.toUpperCase())}
               required
+              className="input"
             />
             <button className="fancyButton" type="submit">
               Join Game
@@ -183,6 +184,7 @@ function Home() {
               maxLength={6}
               value={roomCodeCreate}
               onChange={(e) => setRoomCodeCreate(e.target.value.toUpperCase())}
+              className="input"
             />
             <button className="fancyButton" type="submit">
               Create Room

@@ -102,3 +102,41 @@ p {
   transform: translateY(5px);
   box-shadow: 0px 0px 0px 0px #a29bfe;
 }
+
+.input {
+  border: 2px solid transparent;
+  width: 15em;
+  height: 2.5em;
+  padding-left: 0.8em;
+  outline: none;
+  overflow: hidden;
+  background-color: #f3f3f3;
+  border-radius: 10px;
+  transition: all 0.5s;
+}
+
+.input:hover,
+.input:focus {
+  border: 2px solid #e491c9;
+  box-shadow: 0px 0px 0px 3px rgba(152, 37, 152, 20%);
+  background-color: white;
+}
+
+.simpleButton {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  height: 100%;
+  cursor: pointer;
+  color: #ffffff;
+  background-color: #0c0c0c;
+  transition: all 0.3s ease;
+}
+
+.simpleButton:hover {
+  opacity: 0.9;
+}
+
+.lightText {
+  color: rgba(55, 55, 56, 0.729);
+}

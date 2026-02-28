@@ -43,12 +43,12 @@ function RoomInfo({ roomCode, username, users, ready, onReady, leaveRoom }) {
       {/* Bottom to change status that later disappears */}
       <div className="roomControlButtons">
         {!ready && (
-          <button onClick={onReady} id="readyButton" className="fancyButton">
+          <button onClick={onReady} id="readyButton" className="simpleButton">
             I'm ready!
           </button>
         )}
         <button
-          className="fancyButton"
+          className="simpleButton"
           id="leaveButton"
           onClick={() => leaveRoom()}
         >

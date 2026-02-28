@@ -74,16 +74,16 @@ function Room() {
     });
   };
 
-  // Helper to check if there are more than one player in the room
-  const playersExist = () => {
-    if (users.length == 0) {
+  /// Helper function that checks if there are enough players
+  const checkEnoughPlayers = (currentUsers) => {
+    if (currentUsers.length < 2) {
       showNotification(
         "You need at least two players to start the game!",
         "info",
       );
-      return false;
+      return false; // not enough players
     }
-    return true;
+    return true; // enough players
   };
 
   // Socket event listeners
@@ -120,24 +120,25 @@ function Room() {
     };
 
     const handleReadyStatus = ({ username, ready }) => {
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
+      setUsers((prevUsers) => {
+        const updatedUsers = prevUsers.map((user) =>
           user.username === username ? { ...user, status: ready } : user,
-        ),
-      );
+        );
+
+        // Check number of players after updating
+        checkEnoughPlayers(updatedUsers);
+
+        return updatedUsers;
+      });
     };
 
     const handleAllReady = ({ message, userToStart }) => {
       addMessage(message, "medium");
-      if (playersExist()) return;
       setUserToPaint(userToStart);
-      if (userToStart === username) {
-        setWordInputVisible(true);
-      }
+      if (userToStart === username) setWordInputVisible(true);
     };
 
     const handleRotateDrawer = ({ newDrawer }) => {
-      if (playersExist()) return;
       setUserToPaint(newDrawer);
       setWordGuessVisible(newDrawer !== username);
       setWordInputVisible(newDrawer === username);
@@ -149,7 +150,7 @@ function Room() {
     };
 
     const handleWordSubmitted = ({ username }) => {
-      addMessage(`${username} has submitted a word. Start guessing!`, "high");
+      addMessage(`${username} has submitted a word. Start guessing!`, "medium");
       setUserToPaint(username);
       setWordGuessVisible(true);
     };
@@ -178,10 +179,7 @@ function Room() {
     socket.on("wordSubmitted", handleWordSubmitted);
     socket.on("guessResult", ({ correct }) => {
       if (correct) {
-        addMessage(
-          correct ? "Correct guess!" : "Incorrect guess. Try again!",
-          "medium",
-        );
+        addMessage("Correct guess!", "medium");
       } else {
         addMessage("Incorrect guess. Try again!", "high");
       }
@@ -246,6 +244,19 @@ function Room() {
     setSubmittedGuess("");
   };
 
+  // Form display depending on the mode
+  const isDrawer = wordInputVisible && userToPaint === username;
+  const isGuesser = wordGuessVisible && userToPaint !== username;
+
+  const heading = isDrawer
+    ? "You are the drawer! Please submit a word to draw:"
+    : `Guess the word being drawn by ${userToPaint}!`;
+
+  const value = isDrawer ? submittedWord : submittedGuess;
+  const setValue = isDrawer ? setSubmittedWord : setSubmittedGuess;
+  const handleSubmit = isDrawer ? submitWord : submitGuess;
+  const buttonText = isDrawer ? "Submit Word" : "Submit Guess";
+
   return (
     <div className="roomContainer">
       {/* Short room description */}
@@ -269,56 +280,52 @@ function Room() {
       <div className="main">
         <div className="col1">
           {/* All the incoming notifications */}
-          <div className="notifications card">
+          <div className="messages card">
             {messages.length > 0 ? (
               messages.map((msg) => (
-                <div key={msg.id} className={`notification ${msg.priority}`}>
+                <div key={msg.id} className={`message ${msg.priority}`}>
                   {priorityIcons[msg.priority]}
                   {msg.text}
                 </div>
               ))
             ) : (
-              <p>No notifications yet</p>
+              <p className="lightText">No notifications yet</p>
             )}
           </div>
-          {/* Card for the drawer to enter the correct answer */}
-          {wordInputVisible && userToPaint === username && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                submitWord();
-              }}
-            >
-              <h3>You are the drawer! Please submit a word to draw:</h3>
-              <input
-                type="text"
-                placeholder="Enter a word"
-                value={submittedWord}
-                onChange={(e) => setSubmittedWord(e.target.value)}
-              />
-              <button type="submit">Submit</button>
-            </form>
-          )}
-          {/* Card for the guessers */}
-          {wordGuessVisible && userToPaint !== username && (
-            <div className="wordGuess">
-              <h3>Guess the word being drawn by {userToPaint}!</h3>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  submitGuess();
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="Enter your guess here"
-                  value={submittedGuess}
-                  onChange={(e) => setSubmittedGuess(e.target.value)}
-                />
-                <button type="submit">Submit Guess</button>
-              </form>
-            </div>
-          )}
+          <div className="inputCard card">
+            {isDrawer || isGuesser ? (
+              <>
+                <h3>{heading}</h3>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit();
+                  }}
+                  id="gameForm"
+                >
+                  <input
+                    type="text"
+                    placeholder="Enter your text here"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    className="input"
+                  />
+                  <button
+                    className="simpleButton"
+                    id="submitWordButton"
+                    type="submit"
+                  >
+                    {buttonText}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <p className="lightText">
+                Waiting for the round to start. A form will appear when it's
+                your turn or when guessing begins.
+              </p>
+            )}
+          </div>
           {/* Drawing board */}
           <DrawingBoard
             ref={boardRef}

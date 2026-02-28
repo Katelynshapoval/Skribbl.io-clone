@@ -9,10 +9,6 @@
   margin-bottom: 0;
 }
 
-.boardInfo p {
-  color: rgb(85, 85, 86);
-}
-
 .drawing-board canvas {
   width: 100%;
   height: 25rem;

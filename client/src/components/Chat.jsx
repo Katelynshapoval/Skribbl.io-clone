@@ -57,7 +57,7 @@ function Chat({ username }) {
               </div>
             ))
           ) : (
-            <div className="no-messages">No messages yet</div>
+            <div className="lightText">No messages yet</div>
           )}
           <div />
         </div>
@@ -68,7 +68,7 @@ function Chat({ username }) {
             value={currentMessage}
             onChange={(e) => setCurrentMessage(e.target.value)}
           />
-          <button type="submit">
+          <button type="submit" className="simpleButton">
             <FiSend className="icon" />
           </button>
         </form>
