@@ -14,7 +14,7 @@ body {
   padding: 2rem;
 }
 
-.notification {
+.toast {
   border: 3px solid #eb5f5f;
   background-color: white;
   outline: none;
@@ -35,35 +35,35 @@ body {
   opacity: 0;
 }
 
-.notificationIcon {
+.toastIcon {
   font-size: 2rem;
 }
 
-.notification.show {
+.toast.show {
   transform: translate(-50%, 0);
   opacity: 1;
 }
 
-.notification.error {
+.toast.error {
   border: 3px solid #eb5f5f;
   color: #ec4242;
 }
 
-.notification.alert {
+.toast.alert {
   border: 3px solid #eb955f;
   color: #ec8342;
 }
 
-.notification.info {
+.toast.info {
   border: 3px solid #5f97eb;
   color: #4294ec;
 }
 
-.notification h1 {
+.toast h1 {
   font-size: 1.25rem;
 }
 
-.notification h1,
+.toast h1,
 p {
   margin: 0;
   padding: 0;

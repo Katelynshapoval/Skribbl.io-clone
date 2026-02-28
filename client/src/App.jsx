@@ -4,19 +4,19 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Room from "./pages/Room";
 import { SocketProvider } from "./context/SocketContext";
-import { NotificationsProvider } from "./context/NotificationsContext";
+import { ToastProvider } from "./context/ToastContext";
 
 function App() {
   return (
     <SocketProvider>
-      <NotificationsProvider>
+      <ToastProvider>
         <Router>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/room/:roomCode" element={<Room />} />
           </Routes>
         </Router>
-      </NotificationsProvider>
+      </ToastProvider>
     </SocketProvider>
   );
 }

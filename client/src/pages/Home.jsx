@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "../context/SocketContext";
 import "../css/pages/home.css";
-import { useNotification } from "../context/NotificationsContext";
+import { useToast } from "../context/ToastContext";
 
 function Home() {
   // Input states
@@ -12,7 +12,7 @@ function Home() {
   // Variables for logic, contexr
   const navigate = useNavigate();
   const socket = useSocket();
-  const { showNotification } = useNotification();
+  const { showToast } = useToast();
   // Helpers
   const cleanCode = (code) => code.trim().toUpperCase();
   const persistSession = (username, roomCode) => {
@@ -25,7 +25,7 @@ function Home() {
     if (!socket) return;
 
     const handleErrorMessage = ({ message }) => {
-      showNotification(message, "error");
+      showToast(message, "error");
     };
     socket.on("errorMessage", handleErrorMessage);
     return () => {
@@ -39,10 +39,7 @@ function Home() {
 
     // If no username was introduced
     if (!username.trim()) {
-      showNotification(
-        "Please enter a username before joining a room.",
-        "error",
-      );
+      showToast("Please enter a username before joining a room.", "error");
       return;
     }
 
@@ -79,10 +76,7 @@ function Home() {
     e.preventDefault();
 
     if (!username.trim()) {
-      showNotification(
-        "Please enter a username before creating a room.",
-        "error",
-      );
+      showToast("Please enter a username before creating a room.", "error");
       return;
     }
 
@@ -102,7 +96,7 @@ function Home() {
       // Validate the custom code first
       socket.emit("roomExists", cleanedCode, (roomExists) => {
         if (roomExists) {
-          return showNotification("The room code is not unique.", "error");
+          return showToast("The room code is not unique.", "error");
         }
         emitCreate(cleanedCode);
       });

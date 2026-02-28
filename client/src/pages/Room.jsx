@@ -9,14 +9,14 @@ import "../css/pages/room.css";
 import { IoIosInformationCircleOutline } from "react-icons/io";
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
-import { useNotification } from "../context/NotificationsContext";
+import { useToast } from "../context/ToastContext";
 
 function Room() {
   // Hooks
   const location = useLocation();
   const socket = useSocket();
   const navigate = useNavigate();
-  const { showNotification } = useNotification();
+  const { showToast } = useToast();
 
   // References
   const boardRef = useRef();
@@ -77,10 +77,7 @@ function Room() {
   /// Helper function that checks if there are enough players
   const checkEnoughPlayers = (currentUsers) => {
     if (currentUsers.length < 2) {
-      showNotification(
-        "You need at least two players to start the game!",
-        "info",
-      );
+      showToast("You need at least two players to start the game!", "info");
       return false; // not enough players
     }
     return true; // enough players
