@@ -118,11 +118,18 @@ function removeUserFromRoom(roomCode, username, socket, io) {
   if (!room) return;
 
   // Remove the user
-  room.players.delete(username);
+  room.players.delete(socket.id);
 
   // Delete room if empty
   if (room.players.size === 0) {
-    activeRooms.delete(roomCode);
+    room.deleteTimeout = setTimeout(() => {
+      // Double check nobody rejoined
+      const existingRoom = activeRooms.get(roomCode);
+      if (existingRoom && existingRoom.players.size === 0) {
+        activeRooms.delete(roomCode);
+        console.log(`Room ${roomCode} deleted due to inactivity.`);
+      }
+    }, 5000); // 5 second grace period
   }
 
   // Leave the socket.io room

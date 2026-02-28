@@ -83,6 +83,14 @@ function Room() {
     return true; // enough players
   };
 
+  // Helper to update the user list
+  const requestUsers = () => {
+    if (!socket) return;
+    socket.emit("requestUsers", storedRoomCode, (users) => {
+      setUsers(users);
+    });
+  };
+
   // Socket event listeners
   useEffect(() => {
     if (!socket) return;
@@ -90,7 +98,7 @@ function Room() {
     // If we have username and roomCode, emit joinRoom to get current state
     if (username && roomCode) {
       socket.emit("joinRoom", { roomCode, username });
-      console.log("lox", username, roomCode);
+      requestUsers();
     }
 
     // Socket event listeners
@@ -204,19 +212,6 @@ function Room() {
       socket.off("roomCreated", handleRoomCreated);
     };
   }, [socket, username, roomCode]); // Added username and roomCode as dependencies
-
-  // Get users on start
-  useEffect(() => {
-    socket.emit("requestUsers", storedRoomCode, (users) => {
-      setUsers(users);
-    });
-  }, [socket, storedRoomCode]);
-
-  // useEffect(() => {
-  //   if (users.length > 0) {
-  //     checkEnoughPlayers(users);
-  //   }
-  // }, [users]);
 
   const sendReadyStatus = (status) => {
     if (!socket) return;
