@@ -22,13 +22,13 @@ Players can create or join rooms, draw selected words, and compete by guessing c
 
 ### Home Screen
 
-![Home Preview](/public/preview/home.png)
+![Home Preview](client/public/preview/home.png)
 
 ### Room
 
-![Room 1 Preview](/public/preview/room1.png)
-![Room 2 Preview](/public/preview/room2.png)
-![Room 3 Preview](/public/preview/room3.png)
+![Room 1 Preview](client/public/preview/room1.png)
+![Room 2 Preview](client/public/preview/room2.png)
+![Room 3 Preview](client/public/preview/room3.png)
 
 ---
 
