@@ -103,6 +103,7 @@ function handleJoinRoom(socket) {
 
 // Get users without the timeout
 function getPublicUsers(room) {
+  if (!room) return;
   return Array.from(room.players.entries()).map(([playerId, player]) => ({
     playerId,
     username: player.username,
@@ -207,6 +208,10 @@ function permanentlyRemovePlayer(roomCode, playerId, io) {
 
   room.players.delete(playerId);
 
+  if (room.players.size < 2) {
+    abortGame(io, room, roomCode);
+  }
+
   io.in(roomCode).emit("userLeftMessage", {
     message: `${player.username} has left the room.`,
     users: getPublicUsers(room),
@@ -221,6 +226,25 @@ function permanentlyRemovePlayer(roomCode, playerId, io) {
       }
     }, 5000);
   }
+}
+
+function abortGame(io, room, roomCode) {
+  if (!room) return;
+
+  // Reset players
+  room.players.forEach((p) => {
+    p.played = false;
+    p.status = false;
+  });
+
+  // Reset room state
+  room.started = false;
+  room.currentDrawer = null;
+  room.word = null;
+
+  io.to(roomCode).emit("abortGame", {
+    users: getPublicUsers(room),
+  });
 }
 
 // Ready

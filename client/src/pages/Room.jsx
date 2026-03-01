@@ -108,6 +108,16 @@ function Room() {
       requestUsers();
     }
 
+    // Quit game completely
+    const handleAbortGame = ({ users }) => {
+      setUsers(users);
+      setReady(false);
+      setUserToPaint(null);
+      setSubmittedWord(null);
+      setSubmittedGuess(null);
+      showToast("Game has been aborted.", "error");
+    };
+
     // Socket event listeners
     const handleRoomJoined = ({ roomCode, users, playerId }) => {
       console.log("Room joined:", roomCode, users);
@@ -208,7 +218,7 @@ function Room() {
         "info",
       );
     };
-
+    socket.on("abortGame", handleAbortGame);
     socket.on("roomJoined", handleRoomJoined);
     socket.on("roomRejoined", handleRoomRejoined);
     socket.on("userJoinedMessage", handleUserJoined);
@@ -239,6 +249,7 @@ function Room() {
 
     // Cleanup listeners on unmount
     return () => {
+      socket.off("abortGame", handleAbortGame);
       socket.off("roomJoined", handleRoomJoined);
       socket.off("roomRejoined", handleRoomRejoined);
       socket.off("userJoinedMessage", handleUserJoined);

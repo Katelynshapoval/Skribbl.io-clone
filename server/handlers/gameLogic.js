@@ -25,6 +25,7 @@ function handleSubmitWord(socket) {
 
 function handleCheckIfSubmitted(socket) {
   socket.on("checkIfSubmitted", ({ roomcode }, showGuessBox) => {
+    if (!roomcode) return;
     const room = activeRooms.get(roomcode);
     if (!room) return showGuessBox(false);
 
@@ -110,7 +111,7 @@ function checkRoundEnd(roomCode, io) {
   // Reset played flags
   players.forEach((p) => {
     p.played = false;
-    p.status = false; // optional: force ready again
+    p.status = false;
   });
 
   io.to(roomCode).emit("roundEnded", {
@@ -123,5 +124,6 @@ module.exports = {
   handleSubmitWord,
   handleSubmitGuess,
   handleCheckIfSubmitted,
+  checkRoundEnd,
   // handleRotateDrawer,
 };
