@@ -261,7 +261,16 @@ function Room() {
     socket.emit("sendReadyStatus", { username, ready: status, playerId });
   };
 
+  const isNotEmpty = (word) => {
+    if (word.trim() == "") {
+      showToast("Please enter a word before submitting.", "error");
+      return false;
+    }
+    return true;
+  };
+
   const submitWord = () => {
+    if (!isNotEmpty(submittedWord)) return;
     setWordInputVisible(false);
     socket.emit("submitWord", {
       word: submittedWord.toLowerCase(),
@@ -272,6 +281,7 @@ function Room() {
   };
 
   const submitGuess = () => {
+    if (!isNotEmpty(submittedWord)) return;
     socket.emit("submitGuess", {
       guess: submittedGuess.toLowerCase(),
       roomCode,
