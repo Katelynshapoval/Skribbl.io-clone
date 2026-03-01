@@ -5,7 +5,7 @@
 //     round: 1,
 //     currentDrawer: null,
 //     players: new Map([[username, { username, status: false }]]),
-//     backup: new Map([]),
+//     started: false,
 //   },
 //   ...
 // }
@@ -63,6 +63,12 @@ function handleJoinRoom(socket) {
         });
       }
     } else {
+      // Check is the game is on
+      if (room.started) {
+        return socket.emit("errorMessage", {
+          message: "The game has already started.",
+        });
+      }
       // Create a new player
       assignedPlayerId = crypto.randomUUID();
       room.players.set(assignedPlayerId, {
@@ -122,6 +128,7 @@ function handleCreateRoom(socket) {
     const room = {
       word: null,
       round: 1,
+      started: false,
       currentDrawer: null,
       players: new Map([
         [
@@ -135,7 +142,6 @@ function handleCreateRoom(socket) {
           },
         ],
       ]),
-      backup: new Map([]),
     };
     activeRooms.set(roomCode, room);
 
@@ -252,6 +258,9 @@ function handleReadyStatus(socket, io) {
     const starter =
       playersArray[Math.floor(Math.random() * playersArray.length)];
     room.currentDrawer = starter.username;
+
+    // Change game status
+    room.started = true;
 
     io.in(socket.roomCode).emit("allReady", {
       message: "All users are ready!",
