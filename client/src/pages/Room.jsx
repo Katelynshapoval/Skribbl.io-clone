@@ -194,6 +194,21 @@ function Room() {
       }, 3000);
     };
 
+    const handleRoundEnded = ({ round, users }) => {
+      setUsers(users);
+      setReady(false);
+      setUserToPaint(null);
+      setWordGuessVisible(false);
+      setWordInputVisible(false);
+      setSubmittedGuess("");
+      setSubmittedWord("");
+
+      showToast(
+        "Round ended! If you want to play again, let everyone know you're ready.",
+        "info",
+      );
+    };
+
     socket.on("roomJoined", handleRoomJoined);
     socket.on("roomRejoined", handleRoomRejoined);
     socket.on("userJoinedMessage", handleUserJoined);
@@ -209,6 +224,7 @@ function Room() {
         addMessage("Incorrect guess. Try again!", "high");
       }
     });
+    socket.on("roundEnded", handleRoundEnded);
 
     socket.on("userGuessedCorrectly", handleUserGuessedCorrectly);
 
@@ -234,6 +250,7 @@ function Room() {
       socket.off("guessResult");
       socket.off("userGuessedCorrectly", handleUserGuessedCorrectly);
       socket.off("newGuess");
+      socket.off("roundEnded", handleRoundEnded);
       socket.off("rotateDrawer", handleRotateDrawer);
       socket.off("roomCreated", handleRoomCreated);
     };

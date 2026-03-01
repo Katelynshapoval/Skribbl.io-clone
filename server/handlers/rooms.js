@@ -4,7 +4,7 @@
 //     word: null,
 //     round: 1,
 //     currentDrawer: null,
-//     players: new Map([[username, { username, status: false }]]),
+//     players: new Map([[username, { username, status: false, played: false }]]),
 //     started: false,
 //   },
 //   ...
@@ -47,7 +47,6 @@ function handleJoinRoom(socket) {
     if (playerId && room.players.has(playerId)) {
       // Try to restore existing player
       const existingPlayer = room.players.get(playerId);
-      console.log("got here");
 
       if (existingPlayer) {
         existingPlayer.playerId = playerId;
@@ -74,6 +73,7 @@ function handleJoinRoom(socket) {
       room.players.set(assignedPlayerId, {
         username,
         status: false,
+        played: false,
         socketId: socket.id,
         connected: true,
         disconnectTimer: null,
@@ -136,6 +136,7 @@ function handleCreateRoom(socket) {
           {
             username,
             status: false,
+            played: false,
             socketId: socket.id,
             connected: true,
             disconnectTimer: null,
@@ -258,6 +259,8 @@ function handleReadyStatus(socket, io) {
     const starter =
       playersArray[Math.floor(Math.random() * playersArray.length)];
     room.currentDrawer = starter.username;
+    const realPlayer = room.players.get(starter.playerId);
+    realPlayer.played = true;
 
     // Change game status
     room.started = true;
@@ -302,4 +305,5 @@ module.exports = {
   handleReadyStatus,
   handleValidateRoom,
   handleRequestUsers,
+  getPublicUsers,
 };

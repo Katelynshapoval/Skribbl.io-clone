@@ -1,4 +1,4 @@
-const { activeRooms } = require("../handlers/rooms.js");
+const { activeRooms, getPublicUsers } = require("../handlers/rooms.js");
 
 function handleSubmitWord(socket) {
   socket.on("submitWord", ({ word, roomCode, username }) => {
@@ -48,7 +48,12 @@ function handleSubmitGuess(socket, io) {
         word: correctWord,
       });
       setTimeout(() => {
-        rotateDrawerBackend(roomCode, io);
+        checkRoundEnd(roomCode, io);
+        const room = activeRooms.get(roomCode);
+
+        if (room && room.started) {
+          rotateDrawerBackend(roomCode, io);
+        }
       }, 3000);
     } else {
       socket.emit("guessResult", { correct: false });
@@ -78,10 +83,39 @@ function rotateDrawerBackend(roomCode, io) {
     currentIndex === -1 ? 0 : (currentIndex + 1) % playersArray.length;
 
   room.currentDrawer = playersArray[nextIndex].username;
+  playersArray[nextIndex].played = true;
   room.word = null;
 
   io.to(roomCode).emit("drawerChanged", {
     newDrawer: room.currentDrawer,
+  });
+}
+
+function checkRoundEnd(roomCode, io) {
+  const room = activeRooms.get(roomCode);
+  if (!room) return;
+
+  const players = [...room.players.values()];
+
+  const allPlayed = players.every((p) => p.played);
+
+  if (!allPlayed) return;
+
+  // Round is finished
+  room.round += 1;
+  room.started = false;
+  room.currentDrawer = null;
+  room.word = null;
+
+  // Reset played flags
+  players.forEach((p) => {
+    p.played = false;
+    p.status = false; // optional: force ready again
+  });
+
+  io.to(roomCode).emit("roundEnded", {
+    round: room.round,
+    users: getPublicUsers(room),
   });
 }
 
