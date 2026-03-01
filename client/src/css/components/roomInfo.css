@@ -66,3 +66,24 @@
 #leaveButton {
   background-color: rgb(214, 24, 24);
 }
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .roomInfoContainer {
+    flex-direction: column;
+  }
+
+  .users {
+    height: auto;
+    max-height: 120px;
+  }
+
+  .roomControlButtons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .roomControlButtons button {
+    width: 100%;
+  }
+}

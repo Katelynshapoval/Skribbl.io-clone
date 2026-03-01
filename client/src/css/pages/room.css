@@ -136,3 +136,43 @@
   font-size: 1.25rem;
   margin-bottom: 2rem;
 }
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .roomContainer {
+    width: 95%;
+  }
+
+  .main {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .col1,
+  .col2 {
+    flex: 1 1 100%;
+  }
+
+  .notifications {
+    height: auto;
+    max-height: 200px;
+  }
+
+  .inputCard {
+    height: auto;
+    gap: 1rem;
+  }
+
+  #gameForm {
+    flex-direction: column;
+  }
+
+  #submitWordButton {
+    width: 100%;
+  }
+
+  .roomSubheading {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+}

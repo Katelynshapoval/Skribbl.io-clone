@@ -62,3 +62,26 @@ input[type="color"]::-moz-color-swatch {
 #penSizeSlider {
   accent-color: #e491c9;
 }
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .drawing-board canvas {
+    width: 100%;
+    height: 18rem;
+  }
+
+  .boardInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .controllers {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #eraseButton {
+    width: 100%;
+  }
+}
