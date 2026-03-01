@@ -292,7 +292,7 @@ function Room() {
   };
 
   const submitGuess = () => {
-    if (!isNotEmpty(submittedWord)) return;
+    if (!isNotEmpty(submittedGuess)) return;
     socket.emit("submitGuess", {
       guess: submittedGuess.toLowerCase(),
       roomCode,

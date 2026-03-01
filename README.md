@@ -1,12 +1,51 @@
-# React + Vite
+# Skribbl.io-clone
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A real-time multiplayer drawing and guessing game inspired by Skribbl.io.  
+Players can create or join rooms, draw selected words, and compete by guessing correctly in the shortest time possible.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+- Real-time multiplayer gameplay
+- Create and join custom rooms
+- Live drawing canvas
+- Word selection system
+- Real-time chat and guessing
+- Score tracking
+- Multiple game rounds
+- Responsive UI
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Preview
+
+### Home Screen
+
+![Home Preview](/public/preview/home.png)
+
+### Room
+
+![Room 1 Preview](/public/preview/room1.png)
+![Room 2 Preview](/public/preview/room2.png)
+![Room 3 Preview](/public/preview/room3.png)
+
+---
+
+## Tech Stack
+
+- Frontend: React
+- Backend: Node.js
+- Real-time Communication: Socket.io
+- Styling: CSS
+
+---
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/your-username/Skribbl.io-clone.git
+cd Skribbl.io-clone
+```
