@@ -59,9 +59,17 @@ function handleSubmitGuess(socket, io) {
     } else {
       socket.emit("guessResult", { correct: false });
 
+      // Current drawer
+      let players = [...room.players.values()];
+      const drawer = players.find(
+        (user) => user.username == room.currentDrawer,
+      );
+      console.log(drawer);
+
       // Notify the drawing player about the new guess
-      if (room.drawingPlayerSocketId) {
-        socket.to(room.drawingPlayerSocketId).emit("newGuess", {
+      console.log(drawer.socketId, "socket");
+      if (drawer.socketId) {
+        socket.to(drawer.socketId).emit("newGuess", {
           username,
           guess,
         });

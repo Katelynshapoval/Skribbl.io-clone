@@ -57,6 +57,7 @@ function handleJoinRoom(socket) {
           playerId,
           roomCode: socket.roomCode,
           users: getPublicUsers(room),
+          socketId: socket.id,
           status: existingPlayer.status,
           currentDrawer: room.currentDrawer,
         });
