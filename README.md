@@ -46,6 +46,6 @@ Players can create or join rooms, draw selected words, and compete by guessing c
 Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/Skribbl.io-clone.git
+git clone https://github.com/Katelynshapoval/Skribbl.io-clone.git
 cd Skribbl.io-clone
 ```
