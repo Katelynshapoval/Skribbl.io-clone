@@ -11,6 +11,7 @@ const {
   handleSubmitWord,
   handleSubmitGuess,
   handleRotateDrawer,
+  handleCheckIfSubmitted,
 } = require("../handlers/gameLogic");
 
 module.exports = (io) => {
@@ -22,6 +23,7 @@ module.exports = (io) => {
     handleReadyStatus(socket, io);
     handleValidateRoom(socket);
     handleRequestUsers(socket);
+    handleCheckIfSubmitted(socket);
 
     // Game logic handlers
     handleSubmitWord(socket);

@@ -23,6 +23,15 @@ function handleSubmitWord(socket) {
   });
 }
 
+function handleCheckIfSubmitted(socket) {
+  socket.on("checkIfSubmitted", ({ roomcode }, showGuessBox) => {
+    const room = activeRooms.get(roomcode);
+    if (!room) return showGuessBox(false);
+
+    showGuessBox(room.word != null);
+  });
+}
+
 function handleSubmitGuess(socket, io) {
   socket.on("submitGuess", ({ guess, roomCode, username }) => {
     if (!roomCode || !username) return;
@@ -79,5 +88,6 @@ function rotateDrawerBackend(roomCode, io) {
 module.exports = {
   handleSubmitWord,
   handleSubmitGuess,
+  handleCheckIfSubmitted,
   // handleRotateDrawer,
 };

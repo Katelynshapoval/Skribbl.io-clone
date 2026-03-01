@@ -118,6 +118,24 @@ function Room() {
       addMessage(message, "medium");
     };
 
+    const handleUserRejoined = ({ users, status, currentDrawer }) => {
+      console.log("now, ", users, status, currentDrawer);
+      setUsers(users || []); // ensure users is always an array
+      setReady(status);
+      setUserToPaint(currentDrawer);
+      if (currentDrawer == username) {
+        setWordInputVisible(true);
+      } else {
+        socket.emit(
+          "checkIfSubmitted",
+          { roomcode: roomCode },
+          (showGuessBox) => {
+            setWordGuessVisible(showGuessBox);
+          },
+        );
+      }
+    };
+
     const handleUserLeft = ({ message, users }) => {
       console.log("User left:", message);
       setUsers(users || []); // ensure users is always an array
@@ -171,6 +189,7 @@ function Room() {
     };
 
     socket.on("roomJoined", handleRoomJoined);
+    socket.on("roomRejoined", handleUserRejoined);
     socket.on("userJoinedMessage", handleUserJoined);
     socket.on("userLeftMessage", handleUserLeft);
     socket.on("readyStatus", handleReadyStatus);
@@ -199,6 +218,7 @@ function Room() {
     // Cleanup listeners on unmount
     return () => {
       socket.off("roomJoined", handleRoomJoined);
+      socket.off("roomRejoined", handleUserRejoined);
       socket.off("userJoinedMessage", handleUserJoined);
       socket.off("userLeftMessage", handleUserLeft);
       socket.off("readyStatus", handleReadyStatus);
