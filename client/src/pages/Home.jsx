@@ -15,9 +15,10 @@ function Home() {
   const { showToast } = useToast();
   // Helpers
   const cleanCode = (code) => code.trim().toUpperCase();
-  const persistSession = (username, roomCode) => {
+  const persistSession = (username, roomCode, playerId) => {
     sessionStorage.setItem("username", username);
     sessionStorage.setItem("roomCode", roomCode);
+    sessionStorage.setItem("playerId", playerId);
   };
 
   // Errors from the server
@@ -47,24 +48,27 @@ function Home() {
     if (roomCodeEnter.trim() && socket) {
       // Remove the spaces and convert to correct format
       const cleanedCode = cleanCode(roomCodeEnter);
+      const storedPlayerId = sessionStorage.getItem("playerId");
       // Check if room exists
       socket.emit("roomExists", cleanedCode, (roomExists) => {
         // Callback. No room - no access
         if (!roomExists) {
-          return triggerError("The room code is doesn't exist.");
+          return showToast("The room code is doesn't exist.", "error");
         }
         // Join the room
         socket.emit("joinRoom", {
-          roomCode: roomCodeEnter,
+          roomCode: cleanedCode,
           username: username,
+          playerId: storedPlayerId,
         });
         // Save to session storage for refresh persistence
-        persistSession(username, roomCodeEnter);
+        // persistSession(username, roomCodeEnter, storedPlayerId);
         // Clear the form
         setRoomCodeEnter("");
         // Move to the room
         // navigate(`/room/${cleanedCode}`);
-        socket.once("roomJoined", ({ roomCode }) => {
+        socket.once("roomJoined", ({ roomCode, users, playerId }) => {
+          persistSession(username, roomCode, playerId);
           navigate(`/room/${roomCode}`);
         });
       });
@@ -106,8 +110,8 @@ function Home() {
     }
 
     // Listen for roomCreated once and use the server-provided code
-    socket.once("roomCreated", ({ roomCode, users }) => {
-      persistSession(username, roomCode);
+    socket.once("roomCreated", ({ roomCode, users, playerId }) => {
+      persistSession(username, roomCode, playerId);
 
       navigate(`/room/${roomCode}`, {
         state: { username, users, roomCodeEnter: roomCode },

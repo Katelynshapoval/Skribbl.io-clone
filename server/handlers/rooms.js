@@ -12,16 +12,12 @@
 const activeRooms = new Map();
 
 // Joining
-function handleJoinRoom(socket, io) {
-  socket.on("joinRoom", ({ roomCode, username }) => {
+function handleJoinRoom(socket) {
+  socket.on("joinRoom", ({ roomCode, username, playerId }) => {
     // Basic validation
     if (!roomCode || !username) return;
 
-    // Attach user info to the socket for easy access later
-    socket.username = username;
-    socket.roomCode = roomCode;
-
-    // Get room number
+    // Get room
     let room = activeRooms.get(roomCode);
     if (!room) {
       return socket.emit("errorMessage", { message: "Room not found." });
@@ -34,9 +30,10 @@ function handleJoinRoom(socket, io) {
     }
 
     // Duplicate username protection
-    const usernameTaken = [...room.players.values()].some(
-      (player) => player.username === username,
+    const usernameTaken = [...room.players.entries()].some(
+      ([id, player]) => player.username === username && id !== playerId,
     );
+
     if (usernameTaken) {
       return socket.emit("errorMessage", {
         message: "Username already taken.",
@@ -45,23 +42,67 @@ function handleJoinRoom(socket, io) {
 
     socket.join(roomCode);
 
-    // Try to restore user from backup (if it exists) and if not, simply create a user
-    const restored = tryRestoreFromBackup(room, socket, username, io);
-    if (!restored) {
-      room.players.set(socket.id, { username, status: false });
+    let assignedPlayerId = playerId;
+
+    if (playerId && room.players.has(playerId)) {
+      // Try to restore existing player
+      const existingPlayer = room.players.get(playerId);
+      console.log("got here");
+
+      if (existingPlayer) {
+        existingPlayer.playerId = playerId;
+        existingPlayer.connected = true;
+        clearTimeout(existingPlayer.disconnectTimer);
+
+        socket.emit("roomRejoined", {
+          playerId,
+          roomCode: socket.roomCode,
+          users: getPublicUsers(room),
+          status: existingPlayer.status,
+          currentDrawer: room.currentDrawer,
+        });
+      }
+    } else {
+      // Create a new player
+      assignedPlayerId = crypto.randomUUID();
+      room.players.set(assignedPlayerId, {
+        username,
+        status: false,
+        socketId: socket.id,
+        connected: true,
+        disconnectTimer: null,
+      });
       // Only notify other users
       socket.to(roomCode).emit("userJoinedMessage", {
         message: `${username} has joined the room.`,
-        users: Array.from(room.players.values()),
+        users: getPublicUsers(room),
       });
     }
 
-    // Always notify the user that they have joined (or rejoined)
+    // Attach user info to the socket for easy access later
+    socket.username = username;
+    socket.roomCode = roomCode;
+    socket.playerId = assignedPlayerId;
+
+    // Always notify the joining user
     socket.emit("roomJoined", {
       roomCode,
-      users: Array.from(room.players.values()),
+      users: getPublicUsers(room),
+      playerId: assignedPlayerId,
     });
+
+    console.log("playerId assigned:", assignedPlayerId);
   });
+}
+
+// Get users without the timeout
+function getPublicUsers(room) {
+  return Array.from(room.players.entries()).map(([playerId, player]) => ({
+    playerId,
+    username: player.username,
+    status: player.status,
+    connected: player.connected,
+  }));
 }
 
 // Creating
@@ -75,12 +116,25 @@ function handleCreateRoom(socket) {
       roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     }
 
+    const playerId = crypto.randomUUID();
+
     // Creating the room
     const room = {
       word: null,
       round: 1,
       currentDrawer: null,
-      players: new Map([[socket.id, { username, status: false }]]),
+      players: new Map([
+        [
+          playerId,
+          {
+            username,
+            status: false,
+            socketId: socket.id,
+            connected: true,
+            disconnectTimer: null,
+          },
+        ],
+      ]),
       backup: new Map([]),
     };
     activeRooms.set(roomCode, room);
@@ -88,90 +142,97 @@ function handleCreateRoom(socket) {
     // Attach socket info
     socket.username = username;
     socket.roomCode = roomCode;
+    socket.playerId = playerId;
     socket.join(roomCode);
 
     // Emit roomCreated (for frontend to navigate)
     socket.emit("roomCreated", {
       roomCode,
-      users: Array.from(room.players.values()),
+      users: getPublicUsers(room),
+      playerId: playerId,
     });
   });
 }
 
 // Leaving
 function handleLeaveRoom(socket, io) {
-  socket.on("leaveRoom", ({ username, roomCode }, callback) => {
-    if (!roomCode || !username) return;
-    removeUserFromRoom(roomCode, username, socket, io);
-    if (callback) callback();
+  socket.on("leaveRoom", ({ playerId, roomCode }) => {
+    if (!roomCode || !playerId) return;
+
+    permanentlyRemovePlayer(roomCode, playerId, io);
+
+    // Clear socket info
+    socket.playerId = null;
+    socket.roomCode = null;
+    socket.username = null;
   });
 
   socket.on("disconnect", () => {
-    const { roomCode, username } = socket;
-    if (!roomCode || !username) return;
-    removeUserFromRoom(roomCode, username, socket, io);
+    const { roomCode, playerId } = socket;
+    if (!roomCode || !playerId) return;
+
+    markPlayerDisconnected(roomCode, playerId, io);
   });
 }
 
-// Helper to remove user from room and notify others
-function removeUserFromRoom(roomCode, username, socket, io) {
+// Disconnect
+function markPlayerDisconnected(roomCode, playerId, io) {
   const room = activeRooms.get(roomCode);
   if (!room) return;
 
-  // Start 5 second deletion timer
-  const timeout = setTimeout(() => {
-    room.backup.delete(username);
-    console.log(`${username} permanently removed from backup.`);
-  }, 5000);
-
-  // Save to backup and delete from original list
-  const player = room.players.get(socket.id);
+  const player = room.players.get(playerId);
   if (!player) return;
-  room.players.delete(socket.id);
-  room.backup.set(username, {
-    username,
-    status: player.status,
-    timeout,
+
+  player.connected = false;
+
+  player.disconnectTimer = setTimeout(() => {
+    permanentlyRemovePlayer(roomCode, playerId, io);
+  }, 5000);
+}
+
+// Delete permanently
+function permanentlyRemovePlayer(roomCode, playerId, io) {
+  const room = activeRooms.get(roomCode);
+  if (!room) return;
+
+  const player = room.players.get(playerId);
+  if (!player) return;
+
+  room.players.delete(playerId);
+
+  io.in(roomCode).emit("userLeftMessage", {
+    message: `${player.username} has left the room.`,
+    users: getPublicUsers(room),
   });
 
   // Delete room if empty
   if (room.players.size === 0) {
-    room.deleteTimeout = setTimeout(() => {
-      // Double check nobody rejoined
-      const existingRoom = activeRooms.get(roomCode);
-      if (existingRoom && existingRoom.players.size === 0) {
+    setTimeout(() => {
+      const existing = activeRooms.get(roomCode);
+      if (existing && existing.players.size === 0) {
         activeRooms.delete(roomCode);
-        console.log(`Room ${roomCode} deleted due to inactivity.`);
       }
-    }, 5000); // 5 second grace period
+    }, 5000);
   }
-
-  socket.leave(roomCode);
-
-  // Notify others
-  io.in(roomCode).emit("userLeftMessage", {
-    message: `${username} has left the room.`,
-    users: Array.from(room?.players.values() || []),
-  });
 }
 
 // Ready
 function handleReadyStatus(socket, io) {
-  socket.on("sendReadyStatus", ({ username, ready }) => {
+  socket.on("sendReadyStatus", ({ username, ready, playerId }) => {
     console.log(`Received ready status from ${username}: ${ready}`);
 
     const room = activeRooms.get(socket.roomCode);
     if (!room) return;
 
     // Update the player's ready status
-    const player = room.players.get(socket.id);
+    const player = room.players.get(playerId);
     if (!player) return;
     player.status = ready;
+    console.log(player, "player", playerId);
 
     // Broadcast to everyone in the room (including the sender)
     io.in(socket.roomCode).emit("readyStatus", {
-      username,
-      ready,
+      users: getPublicUsers(room),
     });
 
     // Check if ALL players are ready
@@ -181,7 +242,7 @@ function handleReadyStatus(socket, io) {
       }
     }
 
-    const playersArray = Array.from(room.players.values());
+    const playersArray = getPublicUsers(room);
 
     if (playersArray.length < 2) {
       return; // stops the game if fewer than 2 players
@@ -220,40 +281,8 @@ function handleRequestUsers(socket) {
       return callback([]);
     }
 
-    callback([...room.players.values()]);
+    callback(getPublicUsers(room));
   });
-}
-
-// For refreshing the page
-function tryRestoreFromBackup(room, socket, username, io) {
-  if (!room.backup.has(username)) return false;
-
-  const backupUser = room.backup.get(username);
-
-  // Cancel deletion timer
-  clearTimeout(backupUser.timeout);
-
-  // Remove from backup
-  room.backup.delete(username);
-
-  // Add back to active players with new socket.id
-  room.players.set(socket.id, {
-    username,
-    status: backupUser.status,
-  });
-
-  socket.emit("roomRejoined", {
-    roomCode: socket.roomCode,
-    users: Array.from(room.players.values()),
-    status: backupUser.status,
-    currentDrawer: room.currentDrawer,
-  });
-  io.in(socket.roomCode).emit("userJoinedMessage", {
-    message: `${username} has rejoined the room.`,
-    users: Array.from(room.players.values()),
-  });
-
-  return true;
 }
 
 module.exports = {

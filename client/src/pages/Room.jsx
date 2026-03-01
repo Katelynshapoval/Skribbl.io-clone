@@ -13,7 +13,6 @@ import { useToast } from "../context/ToastContext";
 
 function Room() {
   // Hooks
-  const location = useLocation();
   const socket = useSocket();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -22,12 +21,9 @@ function Room() {
   const boardRef = useRef();
 
   // User information
-  const storedUsername = sessionStorage.getItem("username");
-  const storedRoomCode = sessionStorage.getItem("roomCode");
-
-  // Determine username and room code
-  const username = storedUsername || location.state?.username || "Guest";
-  const roomCode = storedRoomCode || useParams().roomCode;
+  const playerId = sessionStorage.getItem("playerId");
+  const username = sessionStorage.getItem("username");
+  const roomCode = sessionStorage.getItem("roomCode") || useParams().roomCode;
 
   // Game
   const [users, setUsers] = useState([]);
@@ -67,11 +63,20 @@ function Room() {
   // Helper to pass to the roominfo component
   const leaveRoom = () => {
     if (!socket) return;
-    socket.emit("leaveRoom", { roomCode, username }, () => {
-      sessionStorage.removeItem("username");
-      sessionStorage.removeItem("roomCode");
-      navigate("/"); // client-side navigation
-    });
+
+    const playerId = sessionStorage.getItem("playerId");
+    const roomCode = sessionStorage.getItem("roomCode");
+
+    if (!playerId || !roomCode) return;
+
+    // Emit leaveRoom to server
+    socket.emit("leaveRoom", { playerId, roomCode });
+
+    // Immediately remove local data and navigate
+    sessionStorage.removeItem("username");
+    sessionStorage.removeItem("roomCode");
+    sessionStorage.removeItem("playerId");
+    navigate("/"); // go back to home page
   };
 
   /// Helper function that checks if there are enough players
@@ -86,8 +91,9 @@ function Room() {
   // Helper to update the user list
   const requestUsers = () => {
     if (!socket) return;
-    socket.emit("requestUsers", storedRoomCode, (users) => {
+    socket.emit("requestUsers", roomCode, (users) => {
       setUsers(users);
+      console.log(users, "users");
     });
   };
 
@@ -96,15 +102,19 @@ function Room() {
     if (!socket) return;
 
     // If we have username and roomCode, emit joinRoom to get current state
-    if (username && roomCode) {
-      socket.emit("joinRoom", { roomCode, username });
+    if (username && roomCode && playerId) {
+      console.log(playerId, "aa");
+      socket.emit("joinRoom", { roomCode, username, playerId });
       requestUsers();
     }
 
     // Socket event listeners
-    const handleRoomJoined = ({ roomCode, users }) => {
+    const handleRoomJoined = ({ roomCode, users, playerId }) => {
       console.log("Room joined:", roomCode, users);
       setUsers(users || []); // ensure users is always an array
+      console.log(users, "join");
+      localStorage.setItem("playerId", playerId);
+      console.log(localStorage.getItem("playerId"), "id");
     };
 
     const handleRoomCreated = ({ roomCode, users }) => {
@@ -118,7 +128,7 @@ function Room() {
       addMessage(message, "medium");
     };
 
-    const handleUserRejoined = ({ users, status, currentDrawer }) => {
+    const handleRoomRejoined = ({ users, status, currentDrawer }) => {
       console.log("now, ", users, status, currentDrawer);
       setUsers(users);
       setReady(status);
@@ -142,12 +152,8 @@ function Room() {
       addMessage(message, "medium");
     };
 
-    const handleReadyStatus = ({ username, ready }) => {
-      setUsers((prevUsers) => {
-        return prevUsers.map((user) =>
-          user.username === username ? { ...user, status: ready } : user,
-        );
-      });
+    const handleReadyStatus = ({ users }) => {
+      setUsers(users);
     };
 
     const handleAllReady = ({ message, userToStart }) => {
@@ -189,7 +195,7 @@ function Room() {
     };
 
     socket.on("roomJoined", handleRoomJoined);
-    socket.on("roomRejoined", handleUserRejoined);
+    socket.on("roomRejoined", handleRoomRejoined);
     socket.on("userJoinedMessage", handleUserJoined);
     socket.on("userLeftMessage", handleUserLeft);
     socket.on("readyStatus", handleReadyStatus);
@@ -218,7 +224,7 @@ function Room() {
     // Cleanup listeners on unmount
     return () => {
       socket.off("roomJoined", handleRoomJoined);
-      socket.off("roomRejoined", handleUserRejoined);
+      socket.off("roomRejoined", handleRoomRejoined);
       socket.off("userJoinedMessage", handleUserJoined);
       socket.off("userLeftMessage", handleUserLeft);
       socket.off("readyStatus", handleReadyStatus);
@@ -235,7 +241,7 @@ function Room() {
 
   const sendReadyStatus = (status) => {
     if (!socket) return;
-    socket.emit("sendReadyStatus", { username, ready: status });
+    socket.emit("sendReadyStatus", { username, ready: status, playerId });
   };
 
   const submitWord = () => {
@@ -370,8 +376,8 @@ function Room() {
             ready={ready}
             leaveRoom={leaveRoom}
             onReady={() => {
-              setReady(true);
               sendReadyStatus(true);
+              setReady(true);
               checkEnoughPlayers(users);
             }}
           />

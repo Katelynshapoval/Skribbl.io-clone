@@ -11,7 +11,7 @@ function handleSubmitWord(socket) {
     room.word = word;
 
     // Save the drawing player's socket id
-    room.drawingPlayerSocketId = socket.id;
+    room.drawingPlayerId = socket.playerid;
 
     // Notify the drawer that their word was accepted
     socket.emit("wordAccepted", { word });

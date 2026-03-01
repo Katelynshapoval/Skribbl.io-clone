@@ -17,7 +17,7 @@ const {
 module.exports = (io) => {
   io.on("connection", (socket) => {
     // Handle joining, creating, and leaving rooms
-    handleJoinRoom(socket, io);
+    handleJoinRoom(socket);
     handleCreateRoom(socket);
     handleLeaveRoom(socket, io);
     handleReadyStatus(socket, io);
