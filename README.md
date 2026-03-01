@@ -27,7 +27,13 @@ Players can create or join rooms, draw selected words, and compete by guessing c
 ### Room
 
 ![Room 1 Preview](client/public/preview/room1.png)
+
+### Room
+
 ![Room 2 Preview](client/public/preview/room2.png)
+
+### Room
+
 ![Room 3 Preview](client/public/preview/room3.png)
 
 ---
