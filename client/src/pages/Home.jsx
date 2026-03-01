@@ -130,7 +130,10 @@ function Home() {
           name="username"
           value={username}
           autoComplete="off"
-          onChange={(e) => setUsername(e.target.value)}
+          onChange={(e) => {
+            const onlyLetters = e.target.value.replace(/[^a-zA-Z]/g, "");
+            setUsername(onlyLetters);
+          }}
           required
         />
       </div>

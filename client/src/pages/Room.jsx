@@ -344,7 +344,14 @@ function Room() {
                     type="text"
                     placeholder="Enter your text here"
                     value={value}
-                    onChange={(e) => setValue(e.target.value)}
+                    onChange={(e) => {
+                      const onlyLetters = e.target.value.replace(
+                        /[^a-zA-Z]/g,
+                        "",
+                      );
+                      setValue(onlyLetters);
+                    }}
+                    minLength={2}
                     className="input"
                   />
                   <button
