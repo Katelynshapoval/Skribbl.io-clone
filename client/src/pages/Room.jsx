@@ -120,7 +120,7 @@ function Room() {
 
     const handleUserRejoined = ({ users, status, currentDrawer }) => {
       console.log("now, ", users, status, currentDrawer);
-      setUsers(users || []); // ensure users is always an array
+      setUsers(users);
       setReady(status);
       setUserToPaint(currentDrawer);
       if (currentDrawer == username) {

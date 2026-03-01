@@ -12,7 +12,7 @@
 const activeRooms = new Map();
 
 // Joining
-function handleJoinRoom(socket) {
+function handleJoinRoom(socket, io) {
   socket.on("joinRoom", ({ roomCode, username }) => {
     // Basic validation
     if (!roomCode || !username) return;
@@ -23,6 +23,9 @@ function handleJoinRoom(socket) {
 
     // Get room number
     let room = activeRooms.get(roomCode);
+    if (!room) {
+      return socket.emit("errorMessage", { message: "Room not found." });
+    }
 
     // If the room was in the process of being deleted, stop it
     if (room.deleteTimeout) {
@@ -30,32 +33,29 @@ function handleJoinRoom(socket) {
       room.deleteTimeout = null;
     }
 
-    // Checker
+    // Duplicate username protection
     const usernameTaken = [...room.players.values()].some(
       (player) => player.username === username,
     );
-
-    // Make sure there're no duplicates
     if (usernameTaken) {
       return socket.emit("errorMessage", {
         message: "Username already taken.",
       });
     }
 
-    // Join the socket.io room
     socket.join(roomCode);
 
     // Try to restore user from backup (if it exists) and if not, simply create a user
-    if (!tryRestoreFromBackup(room, socket, username)) {
-      // Add this user to the room
+    const restored = tryRestoreFromBackup(room, socket, username, io);
+    if (!restored) {
       room.players.set(socket.id, { username, status: false });
+      // Only notify other users
+      socket.to(roomCode).emit("userJoinedMessage", {
+        message: `${username} has joined the room.`,
+        users: Array.from(room.players.values()),
+      });
     }
 
-    // Only notify other users if this is a new join (not a refresh/reconnect)
-    socket.to(roomCode).emit("userJoinedMessage", {
-      message: `${username} has joined the room.`,
-      users: Array.from(room.players.values()),
-    });
     // Always notify the user that they have joined (or rejoined)
     socket.emit("roomJoined", {
       roomCode,
@@ -69,11 +69,13 @@ function handleCreateRoom(socket) {
   socket.on("createRoom", ({ username, roomCodeUser }) => {
     if (!username) return;
 
+    // If no roomcode was provided generate one
     let roomCode = roomCodeUser || undefined;
-    while (!roomCode || activeRooms.has(roomCode)) {
+    while (!roomCode) {
       roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     }
 
+    // Creating the room
     const room = {
       word: null,
       round: 1,
@@ -93,8 +95,6 @@ function handleCreateRoom(socket) {
       roomCode,
       users: Array.from(room.players.values()),
     });
-
-    console.log(`${username} created room: ${roomCode}`);
   });
 }
 
@@ -124,16 +124,15 @@ function removeUserFromRoom(roomCode, username, socket, io) {
     console.log(`${username} permanently removed from backup.`);
   }, 5000);
 
-  // Save to backup
-  const curStatus = room.players.get(socket.id)?.status;
+  // Save to backup and delete from original list
+  const player = room.players.get(socket.id);
+  if (!player) return;
+  room.players.delete(socket.id);
   room.backup.set(username, {
     username,
-    status: curStatus,
+    status: player.status,
     timeout,
   });
-
-  // Remove the user
-  room.players.delete(socket.id);
 
   // Delete room if empty
   if (room.players.size === 0) {
@@ -147,7 +146,6 @@ function removeUserFromRoom(roomCode, username, socket, io) {
     }, 5000); // 5 second grace period
   }
 
-  // Leave the socket.io room
   socket.leave(roomCode);
 
   // Notify others
@@ -167,9 +165,8 @@ function handleReadyStatus(socket, io) {
 
     // Update the player's ready status
     const player = room.players.get(socket.id);
-    if (player) {
-      player.status = ready;
-    }
+    if (!player) return;
+    player.status = ready;
 
     // Broadcast to everyone in the room (including the sender)
     io.in(socket.roomCode).emit("readyStatus", {
@@ -206,11 +203,10 @@ function handleReadyStatus(socket, io) {
   });
 }
 
-// Validate
+// Prevent room id duplicates
 function handleValidateRoom(socket) {
   socket.on("roomExists", (room, callback) => {
     let exists = activeRooms.has(room);
-    console.log(activeRooms, room, "huh");
     callback(exists);
   });
 }
@@ -229,13 +225,10 @@ function handleRequestUsers(socket) {
 }
 
 // For refreshing the page
-function tryRestoreFromBackup(room, socket, username) {
+function tryRestoreFromBackup(room, socket, username, io) {
   if (!room.backup.has(username)) return false;
-  console.log("backup");
 
   const backupUser = room.backup.get(username);
-
-  console.log(room.backup, "backup");
 
   // Cancel deletion timer
   clearTimeout(backupUser.timeout);
@@ -249,24 +242,16 @@ function tryRestoreFromBackup(room, socket, username) {
     status: backupUser.status,
   });
 
-  socket.join(socket.roomCode);
-
   socket.emit("roomRejoined", {
     roomCode: socket.roomCode,
     users: Array.from(room.players.values()),
     status: backupUser.status,
     currentDrawer: room.currentDrawer,
   });
-
-  console.log(
-    "ooh",
-    socket.roomCode,
-    Array.from(room.players.values()),
-    backupUser.status,
-    room.currentDrawer,
-  );
-
-  console.log(`${username} successfully reconnected.`);
+  io.in(socket.roomCode).emit("userJoinedMessage", {
+    message: `${username} has rejoined the room.`,
+    users: Array.from(room.players.values()),
+  });
 
   return true;
 }
@@ -280,30 +265,3 @@ module.exports = {
   handleValidateRoom,
   handleRequestUsers,
 };
-
-// // Check if user exists in backup (reconnecting)
-// if (room.backup.has(username)) {
-//   const backupUser = room.backup.get(username);
-
-//   // Cancel deletion timer
-//   clearTimeout(backupUser.timeout);
-
-//   // Remove from backup
-//   room.backup.delete(username);
-
-//   // Add back to active players with new socket.id
-//   room.players.set(socket.id, {
-//     username,
-//     status: backupUser.status,
-//   });
-
-//   socket.join(roomCode);
-
-//   socket.emit("roomJoined", {
-//     roomCode,
-//     users: Array.from(room.players.values()),
-//   });
-
-//   console.log(`${username} successfully reconnected.`);
-//   return;
-// }
