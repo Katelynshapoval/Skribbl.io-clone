@@ -1,7 +1,7 @@
 # Skribbl.io-clone
 
 A real-time multiplayer drawing and guessing game inspired by Skribbl.io.  
-Players can create or join rooms, draw selected words, and compete by guessing correctly in the shortest time possible.
+Players can create or join rooms, draw their own chosen words, and compete by guessing correctly in the shortest time possible.
 
 ---
 
@@ -10,7 +10,7 @@ Players can create or join rooms, draw selected words, and compete by guessing c
 - Real-time multiplayer gameplay
 - Create and join custom rooms
 - Live drawing canvas
-- Word selection system
+- Drawer chooses their own word
 - Real-time chat and guessing
 - Score tracking
 - Multiple game rounds
